@@ -11,10 +11,16 @@ Every agent writes to a predictable path under the opportunity workspace:
 ```
 opportunities/<opportunity-id>/
 ├── orchestration-summary.md
+├── opportunity-monitor.md
 ├── 1-company-research.md
+├── 1-data-normalization.md
 ├── 2-stakeholder-map.md
 ├── 2-lead-conversation-starter.md
+├── 2-pain-point-analysis.md
 ├── ...
+├── 3-deal-risk-assessment.md
+├── ...
+├── 4-engagement-strategy.md
 ├── 4-interactive-demos.md
 ├── demos/
 │   ├── workflow-automation.html
@@ -100,6 +106,28 @@ These agents operate outside the linear phase sequence. They coordinate the pipe
 
 ---
 
+#### `opportunity-monitor`
+
+| | |
+|---|---|
+| **Phase** | — (continuous, runs throughout deal lifecycle) |
+| **Result file** | `opportunity-monitor.md` |
+
+**Purpose.** Provide always-on, event-driven monitoring of the opportunity from pipeline entry through close. Detects signal changes, triggers agent re-runs, tracks score trajectories, and applies decay modeling to keep intelligence current.
+
+**Responsibilities:**
+- **Event-driven re-evaluation**: Watch for triggering events — CRM stage changes, new meeting transcripts, stakeholder departures, competitor mentions, email activity spikes or drops — and invoke the appropriate agents to refresh affected outputs.
+- **Trend tracking**: Maintain a time-series of qualification scores, risk levels, and engagement metrics. Alert the presales team when the trajectory shifts significantly (positive or negative) with an explanation of the driving factors.
+- **Decay modeling**: Gradually reduce the confidence level and effective qualification score when no new data arrives within a configurable freshness window (e.g., 7/14/30 days). Flag stale data points that need refresh.
+- **Re-run orchestration**: Determine which agents need to re-run in response to each event type (e.g., new competitor detected → `competitive-intelligence`; champion left → `stakeholder-mapper` + `deal-risk-assessor`; new meeting → `meeting-debrief-analyzer`).
+- **Feedback loop**: After deal close, feed the outcome (won/lost, actual revenue, cycle length) back into the scoring model weights used by `deal-qualification-scorer` and `deal-risk-assessor` to improve future accuracy.
+- **Alert generation**: Produce configurable alerts delivered via CRM, Slack, or email for critical events: score drops below threshold, risk escalation, stagnation warnings, and champion changes.
+
+**Inputs:** CRM event stream, email/calendar activity feed, all prior agent outputs, scoring model configuration.
+**Outputs:** `opportunity-monitor.md` — current health dashboard, score trend history, active alerts, decay status, and re-run log. Updated continuously.
+
+---
+
 ## Phase 1 — Research & Data Collection
 
 Gather comprehensive intelligence on the target company before any direct engagement.
@@ -125,6 +153,29 @@ Gather comprehensive intelligence on the target company before any direct engage
 
 **Inputs:** Company name, domain, CRM account record, optional user-supplied context.
 **Outputs:** `1-company-research.md` — structured company dossier covering financials, strategy, technology, organization, and news.
+
+---
+
+#### `data-normalizer`
+
+| | |
+|---|---|
+| **Phase** | 1 |
+| **Result file** | `1-data-normalization.md` |
+
+**Purpose.** Transform raw, heterogeneous data from all ingestion sources into a clean, deduplicated, and consistently structured opportunity record that downstream agents can consume reliably.
+
+**Responsibilities:**
+- Map fields from CRM, firmographic providers, technographic tools, and conversation artifacts into the canonical data model (account, contact, opportunity, activity).
+- Deduplicate contacts and accounts using fuzzy matching on name, email domain, title, and company affiliation.
+- Resolve entity conflicts — when two sources disagree on a field value (e.g., employee count), apply a source-priority hierarchy and flag the discrepancy.
+- Normalize all timestamps to UTC and assign a freshness score to each data point so downstream agents can weight recent signals more heavily.
+- Detect and tag missing or incomplete fields, recording which sources were consulted and which returned no data.
+- Produce a data-completeness scorecard showing coverage percentage per data category (firmographic, technographic, stakeholder, financial, conversation).
+- Output a clean, merged record that becomes the single source of truth for all Phase 2+ agents.
+
+**Inputs:** `1-company-research.md`, raw CRM export, firmographic API responses, technographic feeds, conversation transcripts.
+**Outputs:** `1-data-normalization.md` — merged canonical record, deduplication log, entity-resolution decisions, freshness scores, and data-completeness scorecard.
 
 ---
 
@@ -243,6 +294,28 @@ With research in hand, analyze the opportunity from multiple angles. Most Phase 
 
 ---
 
+#### `pain-point-analyzer`
+
+| | |
+|---|---|
+| **Phase** | 2 |
+| **Result file** | `2-pain-point-analysis.md` |
+
+**Purpose.** Extract, classify, and score the prospect's business pain points from conversation transcripts, documents, and public signals to build a structured problem map that drives use-case selection, value engineering, and engagement strategy.
+
+**Responsibilities:**
+- Run NLP-based keyword and topic extraction across all conversation artifacts (call recordings, email threads, meeting notes, RFP/RFI documents) to surface recurring themes (e.g., "data silos," "manual processes," "compliance deadline," "cost overruns").
+- Classify extracted topics into a taxonomy of known pain-point categories: operational inefficiency, security gaps, scalability limits, regulatory pressure, talent shortage, customer experience degradation, time-to-market delays, and data quality issues.
+- Assign an urgency score (1–5) to each pain point based on language intensity ("critical," "must have," "by Q3"), mention of hard deadlines, executive involvement, and frequency of recurrence across conversations.
+- Perform gap mapping: cross-reference each identified pain point against the product capability matrix to determine alignment (strong fit, partial fit, no fit) and white-space (prospect needs with no current product answer).
+- Rank pain points by a composite of urgency, business impact, and product fit to produce a prioritized problem list.
+- Track pain-point evolution across multiple conversations to detect whether issues are escalating or being resolved independently.
+
+**Inputs:** `1-company-research.md`, `1-data-normalization.md`, conversation transcripts, RFP/RFI documents, email threads, meeting notes.
+**Outputs:** `2-pain-point-analysis.md` — classified and ranked pain-point inventory with urgency scores, product-fit indicators, gap map, and evolution timeline.
+
+---
+
 ### Industry Specialist Agents
 
 Industry specialists are conditionally invoked — the orchestrator selects exactly one based on the prospect's sector classification. Each specialist contributes domain-specific context that generic agents cannot provide.
@@ -358,6 +431,30 @@ Deepen understanding through technical discovery and formal qualification scorin
 
 **Inputs:** All Phase 1 and Phase 2 outputs, `3-technical-discovery.md`, `3-use-cases.md`.
 **Outputs:** `3-deal-qualification.md` — MEDDPICC scorecard, composite score, confidence interval, gap analysis, and stage recommendation.
+
+---
+
+#### `deal-risk-assessor`
+
+| | |
+|---|---|
+| **Phase** | 3 |
+| **Result file** | `3-deal-risk-assessment.md` |
+
+**Purpose.** Identify deal-execution risks — factors that could cause the opportunity to slip, shrink, stall, or be lost — and recommend mitigations distinct from the regulatory/compliance risks handled by `risk-compliance-guardian`.
+
+**Responsibilities:**
+- **Timeline risk**: Flag deals where the stated close date is inconsistent with the remaining decision-process steps, procurement lead times, or budget cycle timing.
+- **Budget risk**: Detect mismatches between the proposed deal size and the prospect's known budget cycles, spending authority levels, or recent cost-cutting signals.
+- **Champion risk**: Alert if the identified champion has gone silent (no activity in a configurable window), changed roles, or left the company.
+- **Competitive risk**: Elevate risk severity if a competitor with a strong historical win rate in this segment, or an incumbent with deep integration, is in the evaluation.
+- **Stagnation detection**: Trigger warnings if no meaningful activity (emails, meetings, document exchanges, CRM stage changes) has occurred within a configurable window.
+- **Scope creep risk**: Flag when requirements are expanding without corresponding budget or timeline adjustments.
+- **Single-thread risk**: Warn when the deal depends on a single stakeholder relationship with no multi-threaded engagement.
+- Produce a risk register with severity ratings (low / medium / high / critical), evidence citations, and recommended mitigation actions for each risk.
+
+**Inputs:** `3-deal-qualification.md`, `2-stakeholder-map.md`, `2-competitive-intelligence.md`, `2-pain-point-analysis.md`, CRM activity log, historical win/loss patterns.
+**Outputs:** `3-deal-risk-assessment.md` — risk register with severity ratings, evidence, mitigation recommendations, and an aggregate deal-health score.
 
 ---
 
@@ -523,6 +620,28 @@ Design the solution, prove its value, and build the artifacts that move the deal
 
 ---
 
+#### `engagement-strategist`
+
+| | |
+|---|---|
+| **Phase** | 4 |
+| **Result file** | `4-engagement-strategy.md` |
+
+**Purpose.** Synthesize all upstream analysis into a unified, actionable engagement playbook that orchestrates the presales team's interactions across stakeholders, content, and milestones.
+
+**Responsibilities:**
+- **Demo customization plan**: Specify which product capabilities to highlight in each demo based on the prospect's mapped pain points, competitive positioning, and stakeholder priorities. Reference the interactive demos built by `interactive-demo-builder` where available.
+- **Stakeholder engagement plan**: Propose specific actions per stakeholder — technical deep-dives for evaluators, ROI workshops for the economic buyer, reference calls for skeptics, executive briefings for sponsors — with sequencing and timing.
+- **Content recommendations**: Surface relevant case studies, white papers, ROI calculators, solution briefs, and analyst reports from the content library that match the prospect's industry, pain points, and buying stage.
+- **Objection preparation**: Pre-generate responses to likely objections based on competitive positioning, deal risks, and common procurement pushback patterns. Map each objection to the stakeholder most likely to raise it.
+- **Milestone calendar**: Define a sequence of engagement touchpoints from current deal stage through close, with objectives, deliverables, and success criteria for each.
+- **Channel strategy**: Recommend the optimal mix of engagement channels (in-person, video, async, self-service) based on the prospect's preferences and geographic distribution.
+
+**Inputs:** `2-stakeholder-map.md`, `2-pain-point-analysis.md`, `2-competitive-intelligence.md`, `3-deal-qualification.md`, `3-deal-risk-assessment.md`, `4-value-engineering.md`, `4-poc-specification.md`, `4-interactive-demos.md`, `4-reference-stories.md`, content library index.
+**Outputs:** `4-engagement-strategy.md` — unified engagement playbook with per-stakeholder action plans, demo customization notes, content recommendations, objection-response matrix, and milestone calendar.
+
+---
+
 ## Phase 5 — Pricing & Packaging
 
 Translate the solution design into a commercially viable offer.
@@ -638,12 +757,15 @@ Support the final deal stages with real-time intelligence and strategic guidance
 | Agent | Phase | Result File | Parallel | Conditional |
 |---|---|---|---|---|
 | `orchestration-summary` | — | `orchestration-summary.md` | — | Always |
+| `opportunity-monitor` | — | `opportunity-monitor.md` | — | Always (continuous) |
 | `company-research-presales` | 1 | `1-company-research.md` | — | Always |
+| `data-normalizer` | 1 | `1-data-normalization.md` | No | Always |
 | `stakeholder-mapper` | 2 | `2-stakeholder-map.md` | Yes | Always |
 | `lead-conversation-starter` | 2 | `2-lead-conversation-starter.md` | Yes | Always |
 | `ai-opportunity-analyzer` | 2 | `2-ai-opportunity-analysis.md` | Yes | Always |
 | `competitive-intelligence` | 2 | `2-competitive-intelligence.md` | Yes | Always |
 | `brand-aligned-design-doc` | 2 | `2-brand-design-spec.md` | Yes | Always |
+| `pain-point-analyzer` | 2 | `2-pain-point-analysis.md` | Yes | Always |
 | `fsi-specialist` | 2 | `2-fsi-specialist.md` | Yes | Industry = FSI |
 | `healthcare-life-sciences-specialist` | 2 | `2-healthcare-specialist.md` | Yes | Industry = Healthcare |
 | `manufacturing-specialist` | 2 | `2-manufacturing-specialist.md` | Yes | Industry = Manufacturing |
@@ -663,6 +785,7 @@ Support the final deal stages with real-time intelligence and strategic guidance
 | `technical-discovery` | 3 | `3-technical-discovery.md` | Yes | Always |
 | `use-case-ideator` | 3 | `3-use-cases.md` | Yes | Always |
 | `deal-qualification-scorer` | 3 | `3-deal-qualification.md` | No | Always |
+| `deal-risk-assessor` | 3 | `3-deal-risk-assessment.md` | No | Always |
 | `value-engineer` | 4 | `4-value-engineering.md` | Yes | Always |
 | `poc-builder` | 4 | `4-poc-specification.md` | Yes | Always |
 | `risk-compliance-guardian` | 4 | `4-risk-compliance.md` | Yes | Always |
@@ -670,6 +793,7 @@ Support the final deal stages with real-time intelligence and strategic guidance
 | `change-management-advisor` | 4 | `4-change-management.md` | Yes | Always |
 | `partner-solution-architect` | 4 | `4-partner-architecture.md` | Yes | If partners relevant |
 | `interactive-demo-builder` | 4 | `4-interactive-demos.md` | No | Always |
+| `engagement-strategist` | 4 | `4-engagement-strategy.md` | No | Always |
 | `pricing-strategist` | 5 | `5-pricing-strategy.md` | — | Always |
 | `proposal-generator` | 6 | `6-proposal.md` | — | Always |
 | `negotiation-strategist` | 7 | `7-negotiation-strategy.md` | Yes | Always |
@@ -682,26 +806,36 @@ Support the final deal stages with real-time intelligence and strategic guidance
 ## Dependency Graph
 
 ```
-Phase 1 (sequential)
+Phase 1 (sequential) ────────────────────────────────────────────────
   company-research-presales
+          │
+          ▼
+  data-normalizer
           │
           ▼
 Phase 2 (parallel) ──────────────────────────────────────────────────
   stakeholder-mapper          ai-opportunity-analyzer
   lead-conversation-starter*  competitive-intelligence
-  brand-aligned-design-doc    <industry-specialist>
+  brand-aligned-design-doc    pain-point-analyzer
+  <industry-specialist>
           │
           ▼
 Phase 3 (partially parallel) ────────────────────────────────────────
   technical-discovery ──┐
   use-case-ideator ─────┼──▶ deal-qualification-scorer
+                        │              │
+                        │              ▼
+                        │    deal-risk-assessor
                         │
           ▼             ▼
-Phase 4 (parallel) ──────────────────────────────────────────────────
+Phase 4 (parallel, then sequential) ─────────────────────────────────
   value-engineer          risk-compliance-guardian
   poc-builder             reference-story-builder
   change-management-advisor   partner-solution-architect
   interactive-demo-builder*
+          │
+          ▼
+  engagement-strategist (synthesizes all Phase 4 outputs)
           │
           ▼
 Phase 5 (sequential) ────────────────────────────────────────────────
@@ -717,9 +851,15 @@ Phase 7 (parallel, event-driven) ───────────────�
   meeting-debrief-analyzer (triggered per meeting)
 
 Post-close ───────────────────────────────────────────────────────────
-  win-loss-analyzer
+  win-loss-analyzer ──▶ feedback to opportunity-monitor scoring model
   account-expansion-planner (wins only)
+
+Continuous ───────────────────────────────────────────────────────────
+  opportunity-monitor (always-on; triggers agent re-runs on events,
+                       tracks score trends, applies decay modeling)
 
 * lead-conversation-starter depends on stakeholder-mapper
 * interactive-demo-builder depends on brand-aligned-design-doc
+* deal-risk-assessor depends on deal-qualification-scorer
+* engagement-strategist depends on all other Phase 4 agents
 ```
