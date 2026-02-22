@@ -12,6 +12,7 @@ Every agent writes to a predictable path under the opportunity workspace:
 opportunities/<opportunity-id>/
 ├── orchestration-summary.md
 ├── opportunity-monitor.md
+├── deal-reflection-2026-02-22.md
 ├── 1-company-research.md
 ├── 1-data-normalization.md
 ├── 2-stakeholder-map.md
@@ -125,6 +126,34 @@ These agents operate outside the linear phase sequence. They coordinate the pipe
 
 **Inputs:** CRM event stream, email/calendar activity feed, all prior agent outputs, scoring model configuration.
 **Outputs:** `opportunity-monitor.md` — current health dashboard, score trend history, active alerts, decay status, and re-run log. Updated continuously.
+
+---
+
+#### `deal-reflection`
+
+| | |
+|---|---|
+| **Phase** | — (on-demand, any point in the deal lifecycle) |
+| **Result file** | `deal-reflection-[date].md` |
+
+**Purpose.** Provide a comprehensive, point-in-time assessment of an opportunity by analyzing all existing artifacts — agent outputs, documents, chat histories, and meeting transcripts — and distill them into a clear status summary with prioritized next steps.
+
+**Responsibilities:**
+- **Artifact inventory**: Catalog every agent output, document, transcript, and chat thread that exists for the opportunity. Flag which agents have run, which are stale, and which have never been executed.
+- **Status synthesis**: Produce a narrative summary of the opportunity's current state across all dimensions — company context, stakeholder landscape, pain points, competitive position, qualification score, risk posture, engagement progress, and commercial status — drawing exclusively from existing artifacts rather than re-running analysis.
+- **Progress assessment**: Compare the current state against the engagement strategy milestones (if available) to determine what has been accomplished, what is in progress, and what is behind schedule or blocked.
+- **Signal consolidation**: Surface the most important positive signals (buying indicators, champion activity, timeline acceleration) and negative signals (stakeholder silence, new competitors, scope changes, stalled conversations) scattered across meeting debriefs, chat logs, and email threads.
+- **Knowledge gap detection**: Identify critical unknowns — questions that remain unanswered, data that has gone stale, stakeholders who haven't been engaged, discovery areas that were never explored — and rank them by impact on deal progression.
+- **Next-step recommendations**: Produce a prioritized action list organized by category:
+  - **Actions**: Concrete tasks for the presales/sales team (e.g., "Schedule technical deep-dive with the infrastructure team," "Send POC results to the CFO").
+  - **Outreach**: Specific stakeholder engagements needed, with suggested messaging angles and timing (e.g., "Re-engage the VP of Engineering who has been silent for 12 days — lead with the security compliance narrative").
+  - **Research**: Information-gathering tasks that would fill knowledge gaps (e.g., "Run `competitive-intelligence` re-analysis — prospect mentioned evaluating a new vendor in last week's call," "Investigate the new CTO hire's technology preferences").
+  - **Agent re-runs**: Recommend which agents should be re-invoked with updated context and why (e.g., "`stakeholder-mapper` — three new contacts appeared in recent meeting invites," "`deal-risk-assessor` — timeline shifted by two months").
+- **Momentum indicator**: Assign an overall momentum rating (accelerating / steady / decelerating / stalled) with a one-paragraph justification based on activity trends, sentiment trajectory, and milestone progress.
+- **Comparison to prior reflections**: If previous deal-reflection outputs exist, highlight what has changed since the last reflection — new developments, resolved issues, and shifts in trajectory.
+
+**Inputs:** All existing agent outputs for the opportunity, CRM activity log, chat/email threads, meeting transcripts and debriefs, engagement strategy milestones, prior `deal-reflection-[date].md` files (if any).
+**Outputs:** `deal-reflection-[date].md` — opportunity status summary, signal consolidation, knowledge gaps, prioritized next steps (actions, outreach, research, agent re-runs), momentum rating, and delta from prior reflection.
 
 ---
 
@@ -758,6 +787,7 @@ Support the final deal stages with real-time intelligence and strategic guidance
 |---|---|---|---|---|
 | `orchestration-summary` | — | `orchestration-summary.md` | — | Always |
 | `opportunity-monitor` | — | `opportunity-monitor.md` | — | Always (continuous) |
+| `deal-reflection` | — | `deal-reflection-[date].md` | — | On-demand |
 | `company-research-presales` | 1 | `1-company-research.md` | — | Always |
 | `data-normalizer` | 1 | `1-data-normalization.md` | No | Always |
 | `stakeholder-mapper` | 2 | `2-stakeholder-map.md` | Yes | Always |
@@ -857,6 +887,10 @@ Post-close ───────────────────────
 Continuous ───────────────────────────────────────────────────────────
   opportunity-monitor (always-on; triggers agent re-runs on events,
                        tracks score trends, applies decay modeling)
+
+On-demand ────────────────────────────────────────────────────────────
+  deal-reflection (invokable at any phase; reads all existing artifacts,
+                   produces status summary and prioritized next steps)
 
 * lead-conversation-starter depends on stakeholder-mapper
 * interactive-demo-builder depends on brand-aligned-design-doc
