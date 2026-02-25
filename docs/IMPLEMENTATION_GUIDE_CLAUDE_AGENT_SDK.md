@@ -2,7 +2,8 @@
 
 > A practical implementation guide for building the architecture described in
 > [AUTONOMOUS_AGENT_DESIGN.md](./AUTONOMOUS_AGENT_DESIGN.md) using the
-> `@anthropic-ai/claude-agent-sdk` TypeScript package.
+> `@anthropic-ai/claude-agent-sdk` TypeScript package. See also the
+> [Frontend Design](./FRONTEND_DESIGN.md) for the management console UI.
 
 ---
 
@@ -235,6 +236,25 @@ async function runAgent(
 | `abortController.abort()` | Agent interrupted |
 | Stop hook returns `{ continue: false }` | Agent stopped by hook |
 
+### Mapping SDK Results to Canonical Statuses
+
+The design doc defines canonical `AgentStatus` and `SessionStatus` types (see
+[AUTONOMOUS_AGENT_DESIGN.md §7](./AUTONOMOUS_AGENT_DESIGN.md)). Map SDK result
+subtypes as follows:
+
+| SDK `result.subtype` | `AgentStatus` | `SessionStatus` | `errorSubtype` |
+|---------------------|---------------|-----------------|----------------|
+| `"success"` | `"idle"` | `"completed"` | — |
+| `"error_max_turns"` | `"error"` | `"error"` | `"max_turns"` |
+| `"error_max_budget_usd"` | `"error"` | `"error"` | `"max_budget"` |
+| `"error_during_execution"` | `"error"` | `"error"` | `"execution"` |
+| (abort + steer message) | `"running"` | `"active"` | `"steered"` |
+| (abort by user) | `"idle"` | `"completed"` | `"user_cancelled"` |
+| (container hard timeout) | `"timeout"` | `"timeout"` | — |
+
+While an agent is in the queue, its status is `"queued"`. While executing, it is
+`"running"`. These are tracked by the orchestrator, not the SDK.
+
 ---
 
 ## 4. Multi-Turn Sessions
@@ -410,6 +430,12 @@ The SDK loads `CLAUDE.md` from:
 2. Parent directories (walks up the tree)
 3. `additionalDirectories` (global memory)
 
+> **Note**: The design doc describes three memory levels: Global, Group, and Session.
+> The first two are `CLAUDE.md` files loaded here. **Session-level memory** is handled
+> by the SDK's built-in session transcript persistence (via `resume: sessionId`) — it
+> is not a third `CLAUDE.md` file. Session state lives in
+> `data/sessions/{groupFolder}/.claude/`.
+
 ### Writing to Memory
 
 The agent can update its own group memory by using the `Write` or `Edit` tools
@@ -440,6 +466,22 @@ const protectGlobalMemory: HookCallback = async (input, toolUseID, { signal }) =
 ## 6. Concurrency & Group Queue
 
 Implement the two-stage lane architecture from the design doc.
+
+### Queue Modes
+
+The design doc defines five named queue modes that determine how follow-up messages
+are handled when an agent is already running. Implement these as a per-group setting:
+
+| Mode | Behavior | Implementation |
+|------|----------|----------------|
+| `collect` | Coalesce queued messages into one follow-up turn | Buffer in `pendingMessages`, concatenate on drain |
+| `followup` | Queue as next turn after current run completes | Append to `pendingMessages`, process FIFO on drain |
+| `steer` | Inject at next tool boundary, skip remaining tools | Write to IPC `input/`, agent checks between tool calls |
+| `steer-backlog` | Steer immediately AND preserve for follow-up | Write to IPC `input/` + append to `pendingMessages` |
+| `interrupt` | Abort active run, execute new message | Call `abortController.abort()`, then enqueue new message |
+
+The `pipeToActiveSession()` method routes to the correct behavior based on the
+group's configured queue mode.
 
 ### GroupQueue Implementation
 
@@ -622,10 +664,52 @@ function createAgentMcpServer(groupFolder: string, isMain: boolean) {
     }
   );
 
+  const pauseTask = tool(
+    "pause_task",
+    "Pause a scheduled task",
+    { taskId: z.string().describe("Task ID to pause") },
+    async ({ taskId }) => {
+      const task = await db.getTask(taskId);
+      if (!isMain && task?.groupFolder !== groupFolder) {
+        return { content: [{ type: "text", text: "Unauthorized" }], isError: true };
+      }
+      await db.setTaskStatus(taskId, "paused");
+      return { content: [{ type: "text", text: `Task ${taskId} paused` }] };
+    }
+  );
+
+  const resumeTask = tool(
+    "resume_task",
+    "Resume a paused task",
+    { taskId: z.string().describe("Task ID to resume") },
+    async ({ taskId }) => {
+      const task = await db.getTask(taskId);
+      if (!isMain && task?.groupFolder !== groupFolder) {
+        return { content: [{ type: "text", text: "Unauthorized" }], isError: true };
+      }
+      await db.setTaskStatus(taskId, "active");
+      return { content: [{ type: "text", text: `Task ${taskId} resumed` }] };
+    }
+  );
+
+  const cancelTask = tool(
+    "cancel_task",
+    "Delete a scheduled task",
+    { taskId: z.string().describe("Task ID to cancel") },
+    async ({ taskId }) => {
+      const task = await db.getTask(taskId);
+      if (!isMain && task?.groupFolder !== groupFolder) {
+        return { content: [{ type: "text", text: "Unauthorized" }], isError: true };
+      }
+      await db.deleteTask(taskId);
+      return { content: [{ type: "text", text: `Task ${taskId} cancelled` }] };
+    }
+  );
+
   return createSdkMcpServer({
     name: "agent",
     version: "1.0.0",
-    tools: [sendMessage, scheduleTask, listTasks]
+    tools: [sendMessage, scheduleTask, listTasks, pauseTask, resumeTask, cancelTask]
   });
 }
 ```
@@ -910,6 +994,8 @@ import { CronExpressionParser } from "cron-parser";
 
 async function startSchedulerLoop(queue: GroupQueue, pollInterval: number = 60_000) {
   while (!shuttingDown) {
+    // getDueTasks() returns tasks where status = "active" and nextRun <= now.
+    // Tasks with status "paused" or "completed" are excluded.
     const dueTasks = await db.getDueTasks();
 
     for (const task of dueTasks) {
@@ -1190,6 +1276,18 @@ async function writeIpcFile(dir: string, data: object): Promise<void> {
 ---
 
 ## 13. Security Implementation
+
+### Risk Levels
+
+The system uses a 5-level risk scale, consistent across all documents:
+
+| Level | Tools | Default Behavior |
+|-------|-------|-----------------|
+| `low` | Read, Glob, Grep, WebSearch, TodoWrite | Auto-allow |
+| `medium` | Write, Edit, Task, IPC tools | Auto-allow in containers |
+| `medium-high` | Browser automation | Prompt operator in non-container mode |
+| `high` | Bash, external APIs, deployments | Require approval in HITL mode |
+| `critical` | `rm -rf`, force push, production deploys | Always require approval |
 
 ### Permission Modes
 
@@ -1496,6 +1594,11 @@ async function main() {
   const channels = await initChannels();  // WhatsApp, Telegram, etc.
 
   // 2. Set up queue
+  //    Per-group config (model, maxTurns, budget, tools, timeout, queueMode,
+  //    mcpServers, additionalMounts) is loaded from the database and mapped
+  //    to SDK query() options + container settings by runAgent(). The frontend
+  //    management console (FRONTEND_DESIGN.md) writes this config via the
+  //    REST API at PUT /api/agents/:folder.
   const queue = new GroupQueue(parseInt(process.env.MAX_CONCURRENT ?? "5"));
   queue.setProcessFn(async (groupFolder, message) => {
     const group = registeredGroups.get(groupFolder)!;

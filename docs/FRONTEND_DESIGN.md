@@ -143,6 +143,11 @@ carries real-time events; REST handles CRUD and configuration.
 The frontend establishes a single WebSocket connection on login. All real-time events
 flow through it via a typed message protocol.
 
+> **Note**: This is the *management console protocol* — a high-level event stream for
+> the operator UI. It is distinct from the internal gateway protocol
+> (`req`/`res`/`event` frames) described in
+> [AUTONOMOUS_AGENT_DESIGN.md §5](./AUTONOMOUS_AGENT_DESIGN.md).
+
 ```typescript
 // Shared types: shared/ws-types.ts
 
@@ -245,7 +250,7 @@ interface ApprovalRequestEvent {
   groupFolder: string;
   toolName: string;
   toolInput: Record<string, unknown>;
-  riskLevel: "medium" | "high" | "critical";
+  riskLevel: "medium" | "medium-high" | "high" | "critical";
   requestedAt: string;
   timeoutMs: number;
 }
@@ -590,6 +595,7 @@ was applied:
 | `collect` | "Your message will be included in the next response" |
 | `followup` | "Queued as next turn (position #2)" |
 | `steer` | "Course correction sent — agent will redirect" |
+| `steer-backlog` | "Course correction sent — agent will also process your message as a follow-up" |
 | `interrupt` | "Agent interrupted — processing your message" |
 
 ---
@@ -781,14 +787,26 @@ An in-browser editor for the hierarchical CLAUDE.md memory files.
 │  │ Glob     │ Low      │ N/A       │ ██████░░░░  623    │   │
 │  │ Grep     │ Low      │ N/A       │ █████░░░░░  489    │   │
 │  │ WebSearch│ Low      │ N/A       │ ██░░░░░░░░  134    │   │
+│  │ WebFetch │ Low      │ N/A       │ █░░░░░░░░░   78    │   │
 │  │ Task     │ Medium   │ N/A       │ █░░░░░░░░░   67    │   │
+│  │ TodoWrite│ Low      │ N/A       │ █░░░░░░░░░   45    │   │
 │  └──────────┴──────────┴───────────┴────────────────────┘   │
 │                                                             │
-│  MCP TOOLS (click to expand input/output schema):           │
+│  AGENT MCP TOOLS (click to expand input/output schema):     │
 │  ┌──────────────────┬──────────┬────────────────────────┐   │
 │  │ send_message     │ agent    │ ██░░░░░░░░  89         │   │
 │  │ schedule_task    │ agent    │ █░░░░░░░░░  12         │   │
+│  │ list_tasks       │ agent    │ █░░░░░░░░░   8         │   │
+│  │ pause_task       │ agent    │ ░░░░░░░░░░   3         │   │
+│  │ resume_task      │ agent    │ ░░░░░░░░░░   2         │   │
+│  │ cancel_task      │ agent    │ ░░░░░░░░░░   1         │   │
+│  └──────────────────┴──────────┴────────────────────────┘   │
+│                                                             │
+│  EXTERNAL MCP TOOLS (e.g., Playwright):                     │
+│  ┌──────────────────┬──────────┬────────────────────────┐   │
 │  │ browser_click    │playwright│ ███░░░░░░░  234        │   │
+│  │ browser_navigate │playwright│ ██░░░░░░░░  156        │   │
+│  │ browser_type     │playwright│ ██░░░░░░░░  142        │   │
 │  └──────────────────┴──────────┴────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -1139,9 +1157,9 @@ interface AgentConfig {
   timeoutMs: number;
   allowedTools: string[];
   systemPromptAppend?: string;
-  mcpServers: string[];
+  mcpServers: Record<string, McpServerConfig>;
   additionalMounts: Mount[];
-  queueMode: "collect" | "followup" | "steer" | "interrupt";
+  queueMode: "collect" | "followup" | "steer" | "steer-backlog" | "interrupt";
 }
 
 interface Session {
@@ -1153,18 +1171,21 @@ interface Session {
   durationMs: number;
   startedAt: string;
   completedAt?: string;
-  errorSubtype?: string;
+  errorSubtype?: "max_turns" | "max_budget" | "execution" | "user_cancelled" | "steered";
   transcript: TranscriptEntry[];
 }
 
 interface TranscriptEntry {
   uuid: string;
-  type: "user" | "assistant" | "tool_call" | "tool_result";
+  type: "user" | "assistant" | "system" | "result" | "tool_call" | "tool_result";
   content: string;
   toolName?: string;
   toolInput?: Record<string, unknown>;
   timestamp: string;
 }
+// "system" and "result" map to SDK's SDKSystemMessage and SDKResultMessage.
+// "tool_call" and "tool_result" are display decompositions of SDKAssistantMessage
+// content blocks (which contain both text and tool_use blocks).
 
 interface ScheduledTask {
   id: string;
@@ -1185,7 +1206,7 @@ interface ApprovalRequest {
   sessionId: string;
   toolName: string;
   toolInput: Record<string, unknown>;
-  riskLevel: "medium" | "high" | "critical";
+  riskLevel: "medium" | "medium-high" | "high" | "critical";
   status: "pending" | "approved" | "denied" | "timeout";
   requestedAt: string;
   resolvedAt?: string;

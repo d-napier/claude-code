@@ -246,6 +246,11 @@ Communication uses a typed WebSocket protocol with three frame types:
 
 **No event replay**: Events are fire-and-forget. Clients that miss events must explicitly refresh. This simplicity preserves invariant integrity.
 
+> **Note**: This is the *internal gateway protocol* between input sources and the
+> control plane. The management console (see [FRONTEND_DESIGN.md](./FRONTEND_DESIGN.md))
+> uses a separate, higher-level event protocol with typed domain events
+> (`agent:status`, `approval:request`, etc.).
+
 ### Gateway Responsibilities
 
 1. **Authenticate** incoming connections (pairing codes, tokens).
@@ -292,6 +297,21 @@ This is not continuous reasoning. It is a polling loop with a large interval.
 
 ## 7. Session & State Management
 
+### Canonical Status Types
+
+These types are the source of truth across all companion documents.
+
+```
+AgentStatus = "idle" | "running" | "queued" | "error" | "timeout"
+
+SessionStatus = "active" | "completed" | "error" | "timeout"
+
+SessionErrorSubtype = "max_turns" | "max_budget" | "execution"
+                    | "user_cancelled" | "steered"
+
+TaskStatus = "active" | "paused" | "completed"
+```
+
 ### Session as Isolation Boundary
 
 A **session** is the fundamental unit of isolation. Each session has:
@@ -313,17 +333,33 @@ A **session** is the fundamental unit of isolation. Each session has:
 ### State Architecture
 
 ```
-~/.agent/
-├── agents/
-│   └── <agentId>/
-│       ├── config.yaml              # Agent configuration
-│       ├── workspace/               # Agent's working directory ("memory")
-│       │   ├── memory.md            # Persistent notes
-│       │   └── ...                  # Task-specific files
-│       └── sessions/
-│           ├── sessions.json        # Session metadata index
-│           ├── <sessionId>.jsonl    # Append-only transcript
-│           └── <sessionId>.jsonl    # ...
+autonomous-agent/
+├── src/                              # Orchestrator source code
+│   ├── index.ts                      # Main entry point
+│   ├── agent-runner.ts               # SDK wrapper
+│   ├── group-queue.ts                # Concurrency manager
+│   └── ...
+├── groups/
+│   ├── global/
+│   │   └── CLAUDE.md                 # Global memory (admin-writable)
+│   └── {name}/
+│       ├── CLAUDE.md                 # Per-group memory
+│       └── ...                       # Group workspace files
+├── data/
+│   ├── ipc/{groupFolder}/            # File-based IPC
+│   │   ├── messages/
+│   │   ├── tasks/
+│   │   ├── input/
+│   │   └── errors/
+│   ├── sessions/{groupFolder}/
+│   │   └── .claude/                  # SDK session persistence
+│   └── agent.db                      # SQLite (cursors, tasks, groups)
+├── container/
+│   ├── Dockerfile
+│   └── agent-runner/                 # In-container agent runner
+└── .claude/
+    ├── settings.json
+    └── CLAUDE.md                     # Project-level instructions
 ```
 
 ### State Persistence Model
@@ -676,10 +712,11 @@ software project with backend, frontend, and infrastructure teams.
 |----------|----------|------------|
 | **Read-only** | Search, file read, API query | Low |
 | **Workspace-scoped** | File write (within workspace), note-taking | Medium |
+| **IPC** | Send message, schedule task, manage tasks | Medium (authorization-scoped) |
+| **Browser** | Web navigation, form filling | Medium-High |
 | **System** | Shell execution, process management | High (safe inside containers) |
 | **External** | API calls, message sending, deployments | High |
-| **Browser** | Web navigation, form filling | Medium-High |
-| **IPC** | Send message, schedule task, manage tasks | Medium (authorization-scoped) |
+| **Destructive** | `rm -rf`, force push, production deploys, data deletion | Critical (always requires approval) |
 
 ### MCP Server Pattern (NanoClaw)
 
@@ -701,6 +738,8 @@ Agent Runtime
       ├── Bash (sandboxed in container)
       ├── File ops (Read, Write, Edit, Glob, Grep)
       ├── Web (WebSearch, WebFetch)
+      ├── Task (subagent spawner)
+      ├── TodoWrite (progress tracking)
       └── Browser (Chromium automation)
 ```
 
@@ -710,12 +749,16 @@ transport.
 
 ### Human-in-the-Loop Gates
 
-High-risk tools can require human approval before execution:
+Tools at or above a configurable risk threshold require human approval before execution.
+The threshold defaults to `high` but can be lowered per-agent (e.g., `medium-high` for
+browser automation). `critical`-level operations always require approval regardless of
+configuration.
 
 ```
 toolCall = agent.nextAction()
 
-if toolCall.tool.riskLevel == "high":
+if toolCall.tool.riskLevel >= approvalThreshold or
+   toolCall.tool.riskLevel == "critical":
     approval = requestHumanApproval(toolCall)
     if not approval:
         context.append("Tool call denied by user")
@@ -832,15 +875,18 @@ mechanism.
 ```
 data/ipc/{groupFolder}/
 ├── messages/          # Agent → Host: send messages to users
-│   └── {timestamp}.json
+│   └── {timestamp}-{random}.json
 ├── tasks/             # Agent → Host: schedule/manage tasks
-│   └── {timestamp}.json
+│   └── {timestamp}-{random}.json
 ├── input/             # Host → Agent: follow-up messages
-│   ├── {timestamp}.json
+│   ├── {timestamp}-{random}.json
 │   └── _close         # Sentinel: signal graceful shutdown
 └── errors/            # Failed IPC files (audit trail)
     └── {source}-{filename}.json
 ```
+
+The `{random}` suffix prevents filename collisions when multiple messages arrive within
+the same millisecond.
 
 ### Authorization Model
 
@@ -861,7 +907,7 @@ Rather than spawning a new container for every follow-up message, the orchestrat
 
 1. New message arrives for a group that has an active container
 2. Message written as JSON to `data/ipc/{group}/input/{timestamp}.json`
-3. Agent-runner polls `input/` directory at 500ms intervals
+3. Agent-runner polls `input/` directory at 1000ms intervals
 4. New messages are pushed into the `AsyncIterable` prompt stream
 5. Agent processes them as additional turns without losing context
 
@@ -923,9 +969,9 @@ and can reason about alternatives. The loop continues rather than crashing.
 **Circuit breaker**: After N consecutive failures of the same tool, the tool is
 temporarily disabled. The agent is informed and must find alternative approaches.
 
-**Exponential backoff retry**: Failed message processing retries with `5s * 2^(attempt)`
-backoff, up to a configurable max attempts before the message is dropped (but may be
-retried on the next incoming activity).
+**Exponential backoff retry**: Failed message processing retries with `5s × 2^(attempt−1)`
+backoff (5s, 10s, 20s, 40s, 80s), up to a configurable max attempts (default: 5) before
+the message is dropped (but may be retried on the next incoming activity).
 
 **Orphan cleanup**: On startup, the system detects and stops abandoned containers from
 previous crashed runs, preventing resource leaks.
@@ -1114,6 +1160,11 @@ handles a surprising range of tasks.
 ---
 
 ## 19. References
+
+### Companion Documents
+
+- [Implementation Guide (Claude Agent SDK)](./IMPLEMENTATION_GUIDE_CLAUDE_AGENT_SDK.md) — SDK-level implementation of this architecture using `@anthropic-ai/claude-agent-sdk`
+- [Frontend Design — Agent Orchestration Console](./FRONTEND_DESIGN.md) — Web-based management UI for operators
 
 ### Primary Sources
 
