@@ -18,10 +18,10 @@
 7. [Session & State Management](#7-session--state-management)
 8. [Hierarchical Memory Model](#8-hierarchical-memory-model)
 9. [Concurrency & Queue Model](#9-concurrency--queue-model)
-10. [Container Isolation & Runtime](#10-container-isolation--runtime)
+10. [Execution Models & Isolation](#10-execution-models--isolation)
 11. [Multi-Agent Orchestration Patterns](#11-multi-agent-orchestration-patterns)
 12. [Tool System Design](#12-tool-system-design)
-13. [Skill System & Composable Extensions](#13-skill-system--composable-extensions)
+13. [Code-Transform Skills](#13-code-transform-skills)
 14. [Inter-Process Communication (IPC)](#14-inter-process-communication-ipc)
 15. [Error Handling & Recovery](#15-error-handling--recovery)
 16. [Security Model](#16-security-model)
@@ -41,8 +41,7 @@
 | **Least agency** | Agents are granted the minimum autonomy required for their task. Permissions are scoped, not blanket. |
 | **Crash-safe persistence** | State survives restarts. Disk-based transcripts and checkpoints allow exact recovery. |
 | **Composability** | Single-agent, multi-agent, and hybrid patterns share the same primitives (sessions, queues, tools, protocols). |
-| **Container-first isolation** | Security through OS-level container boundaries rather than application-level permission checks. Agents cannot escape their sandbox. |
-| **Small enough to understand** | Prefer a single-process, minimal-dependency architecture over sprawling config-driven systems. Code-driven customization over configuration sprawl. |
+| **Small enough to understand** | Prefer a minimal-dependency architecture over sprawling config-driven systems. Code-driven customization over configuration sprawl. |
 
 ---
 
@@ -52,68 +51,62 @@ These invariants must hold at all times. The system should fail loudly if any ar
 
 1. **Single-writer per session** — At most one active run per session at any instant.
 2. **Append-only transcripts** — Session history is never mutated, only appended.
-3. **Tool-boundary preemption only** — A running agent is never interrupted mid-tool-call; preemption happens between tool calls.
+3. **Between-turn preemption only** — A running agent turn is not interrupted. Preemption (abort/steer) happens between SDK invocations, not mid-turn.
 4. **Idempotent side effects** — External mutations are protected by idempotency keys; safe to retry.
 5. **Mandatory handshake** — Every client connection begins with an authenticated `connect` frame before any work is dispatched.
-6. **Container-per-invocation** — Each agent run executes in an ephemeral container (`--rm`) with explicit mount allowlists. No shared mutable state between runs except through the state layer.
-7. **Secrets off-disk** — Credentials pass via stdin or environment injection at runtime; they are never written to the agent's filesystem or transcripts.
+6. **Secrets via environment only** — Credentials are injected via environment variables at runtime and are never written to transcripts or agent filesystems. The host process `.env` file is not mounted into containers in container-isolated mode.
 
 ---
 
 ## 3. High-Level Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        INPUT SOURCES                        │
-│  User Messages │ Webhooks │ Timers/Cron │ Heartbeats │ Hooks│
-└───────┬─────────────┬──────────┬────────────┬──────────┬────┘
-        │             │          │            │          │
-        ▼             ▼          ▼            ▼          ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    CONTROL PLANE (GATEWAY)                   │
-│                                                             │
-│  ┌─────────────┐  ┌──────────────┐  ┌───────────────────┐  │
-│  │  Protocol    │  │  Session      │  │  Queue Manager    │  │
-│  │  Layer       │  │  Router       │  │  (Lane-Aware FIFO)│  │
-│  │  (WebSocket) │  │              │  │                   │  │
-│  └──────┬──────┘  └──────┬───────┘  └────────┬──────────┘  │
-│         │                │                    │             │
-│  ┌──────┴────────────────┴────────────────────┴──────────┐  │
-│  │              Concurrency Governor                     │  │
-│  │   Per-Session Serialization + Global Throttle Cap     │  │
-│  └───────────────────────┬───────────────────────────────┘  │
-└──────────────────────────┼──────────────────────────────────┘
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────────────┐
-│                  CONTAINER ISOLATION LAYER                    │
-│  ┌────────────────────────────────────────────────────────┐  │
-│  │               AGENT RUNTIME (Ephemeral)                │  │
-│  │                                                        │  │
-│  │  ┌──────────┐  ┌────────────┐  ┌──────────────────┐   │  │
-│  │  │  Context  │─▶│  LLM Call  │─▶│ Tool Execution   │   │  │
-│  │  │  Loader   │  │  (Reason)  │  │ (Act)            │   │  │
-│  │  └──────────┘  └────────────┘  └───────┬──────────┘   │  │
-│  │                                        │              │  │
-│  │                                 ┌──────▼──────┐       │  │
-│  │                                 │ Observation  │       │  │
-│  │                                 │ + Persist    │       │  │
-│  │                                 └─────────────┘       │  │
-│  └────────────────────────────────────────────────────────┘  │
-│  Process isolation │ FS isolation │ Unprivileged user        │
-│  Explicit mounts   │ Secrets via stdin │ Ephemeral (--rm)    │
-└─────────────────────────────────────────────────────────────┘
-                           │
-              ┌────────────┼────────────┐
-              ▼            ▼            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                      STATE LAYER                             │
-│                                                             │
-│  Session Transcripts  │  Agent Workspace  │  IPC Channels   │
-│  (JSONL)              │  (Files/Memory)   │  (File-based)   │
-│  Session Metadata     │  Checkpoints      │  Task Snapshots │
-│  (JSON/SQLite)        │                   │                 │
-└─────────────────────────────────────────────────────────────┘
++-------------------------------------------------------------+
+|                        INPUT SOURCES                        |
+|  User Messages | Webhooks | Timers/Cron | Heartbeats | Hooks |
++-------+-------------+----------+------------+----------+----+
+        |             |          |            |          |
+        v             v          v            v          v
++-------------------------------------------------------------+
+|                    CONTROL PLANE (GATEWAY)                  |
+|                                                             |
+|  +-----------+  +-------------+  +---------------------+   |
+|  |  Protocol  |  |  Session    |  |  Queue Manager      |   |
+|  |  Layer     |  |  Router     |  |  (Lane-Aware FIFO)  |   |
+|  | (WebSocket)|  |             |  |                     |   |
+|  +-----+------+  +------+------+  +---------+-----------+   |
+|        |                |                   |               |
+|  +-----+----------------+-------------------+----------+    |
+|  |              Concurrency Governor                   |    |
+|  |   Per-Session Serialization + Global Throttle Cap   |    |
+|  +------------------------------+----------------------+    |
++-----------------------------+-------------------------------+
+                              |
+                              v
++-------------------------------------------------------------+
+|                  EXECUTION LAYER                            |
+|                                                             |
+|  In-Process (default)       Container-Isolated (hardened)  |
+|  +--------------------+     +----------------------------+ |
+|  |  SDK subprocess    |     |  Docker container (--rm)   | |
+|  |  in orchestrator   |     |  explicit mounts           | |
+|  |  process           |     |  unprivileged user         | |
+|  +--------------------+     +----------------------------+ |
+|                                                             |
+|  Both models expose the same interface to the orchestrator: |
+|  configure -> query()/createSession() -> consume stream     |
++-------------------------------------------------------------+
+                              |
+             +-----------+----+----+-----------+
+             v           v        v           v
++-------------------------------------------------------------+
+|                      STATE LAYER                            |
+|                                                             |
+|  Session Transcripts  |  Agent Workspace  |  IPC Channels  |
+|  (JSONL)              |  (Files/Memory)   |  (File-based)  |
+|  Session Metadata     |  Checkpoints      |  Dead-Letter   |
+|  (JSON/SQLite)        |                   |  Store         |
++-------------------------------------------------------------+
 ```
 
 ### Component Responsibilities
@@ -122,115 +115,97 @@ These invariants must hold at all times. The system should fail loudly if any ar
 |-----------|------|
 | **Input Sources** | Normalize diverse triggers into a unified event format. |
 | **Control Plane** | Single source of truth. Routes events, enforces invariants, manages sessions, governs concurrency. |
-| **Container Layer** | OS-level isolation boundary. Each agent run is an ephemeral container with explicit filesystem mounts, process separation, and unprivileged execution. |
-| **Agent Runtime** | Stateless worker inside the container executing the core loop: load context → call LLM → execute tools → persist. |
+| **Execution Layer** | Runs the SDK as either an in-process subprocess or inside a Docker container. See §10 for tradeoffs. |
 | **State Layer** | Durable, append-only storage. Transcripts, metadata, workspace files, IPC channels, and checkpoints. |
 
 ---
 
 ## 4. The Agent Runtime Loop
 
-The agent runtime implements a **ReAct-style loop** (Reason → Act → Observe) with explicit
-termination conditions and tool-boundary safety.
+### The SDK as a Black Box
+
+The `@anthropic-ai/claude-agent-sdk` wraps a Claude CLI subprocess with JSON-lines
+over stdin/stdout. It implements the full ReAct loop (Reason → Act → Observe)
+**internally** — the developer does not control tool execution, context injection, or
+the step-by-step reasoning cycle. The SDK exposes two surfaces:
+
+- **V1 — `query()`**: Single-turn or batch. Accepts a prompt, returns when the agent
+  reaches a stopping condition or `maxTurns` is exhausted.
+- **V2 — `createSession()` + `send()` / `stream()`** *(preview/unstable)*: Multi-turn.
+  Creates a persistent session that can receive follow-up inputs without re-initializing
+  context.
+
+The developer configures the SDK (system prompt, tools, hooks, max turns), calls
+`query()` or `createSession()`, and consumes the resulting message stream. That is the
+extent of orchestrator control over the inner loop.
+
+### What the Orchestrator Controls
+
+The orchestrator owns the **message-dispatch loop** — the outer cycle that feeds work
+into the SDK and processes its output:
 
 ```
-function agentLoop(session, input):
-    context = loadContext(session)
-    context.append(input)
+orchestrator loop:
 
-    while not terminated:
-        # REASON — Ask the LLM what to do next
-        response = llm.call(context, tools=availableTools)
-
-        # CHECK TERMINATION
-        if response.isComplete or iterationCount >= maxIterations:
-            persist(session, response.finalMessage)
-            return response.finalMessage
-
-        # ACT — Execute tool calls sequentially or in parallel
-        for toolCall in response.toolCalls:
-            # PREEMPTION CHECK (tool boundary)
-            if queue.hasPendingMessage(session) and queueMode == "steer":
-                inject(queue.dequeue(session), context)
-                break
-
-            observation = executeTool(toolCall)
-            context.append(observation)
-
-        iterationCount++
-
-    persist(session, timeoutMessage)
-    return timeoutMessage
+  1. Receive input event (user message, webhook, timer, hook)
+  2. Acquire session lane (single-writer guarantee)
+  3. Configure SDK: system prompt, tools, hooks, maxTurns
+  4. Dispatch to SDK: query(prompt) or session.send(message)
+  5. Consume output stream: persist assistant messages, tool results
+  6. Persist transcript and session metadata
+  7. Release session lane
+  8. Return to step 1
 ```
 
-### Loop Termination Conditions
+The SDK handles everything inside step 4. The orchestrator handles everything outside it.
 
-| Condition | Behavior |
-|-----------|----------|
-| LLM emits final answer (no tool calls) | Return result, persist transcript |
-| Max iterations reached | Return partial result with explanation |
-| Steering message injected | Break current tool chain, process new input |
-| Unrecoverable error | Log error, persist state, surface to user |
-| User-initiated cancel | Abort at next tool boundary |
+### Hooks
 
-### Key Properties
+The SDK provides callback hooks that fire during the internal loop:
 
-- **Stateless runtime**: All durable state lives in the state layer. The runtime can crash and another worker can resume from the last checkpoint.
-- **Bounded execution**: `maxIterations` and `maxBudgetUsd` prevent runaway loops and unbounded cost.
-- **Tool-boundary safety**: Preemption only happens between tool calls, never mid-execution. This prevents partially-applied side effects.
+| Hook | When It Fires | Orchestrator Use |
+|------|---------------|-----------------|
+| `PreToolUse` | Before each tool call | Approve/deny, log, inject context |
+| `PostToolUse` | After each tool call | Audit, persist observations |
+| `Stop` | When the loop terminates | Persist final state, trigger follow-up |
+| `PreCompact` | When context approaches limits | Archive transcript segments |
 
-### Recursive Generator Pattern (NanoClaw/Claude Agent SDK)
+Hooks are the only mechanism for the orchestrator to observe or influence the internal
+loop. They cannot inject mid-turn messages; they can only approve/deny the current action
+or record state.
 
-An alternative to the iterative while-loop is a **recursive async generator** pattern.
-Each invocation represents one API turn:
+### Bounded Execution
 
-```
-async function* EZ(context, turnCount):
-    # Prepare and trim context
-    messages = trimToContextWindow(context)
+- **`maxTurns`**: SDK-native option. Limits the number of internal reasoning turns.
+  When reached, the SDK stops and returns a partial result.
+- **Budget tracking**: `maxBudgetUsd` is application-layer logic. The orchestrator
+  accumulates `cost_usd` values from the SDK's output stream and halts dispatch when
+  the budget is exceeded. This is not a native SDK option.
 
-    # Call LLM via streaming
-    response = await streamingCall(messages, tools)
+### Context Window Management
 
-    # Yield assistant message to caller
-    yield { type: "assistant", content: response }
+When the agent's context approaches the model's context limit, the SDK fires the
+`PreCompact` hook before compacting. The orchestrator should use this hook to archive
+older transcript segments to the state layer. Archived segments are no longer in the
+active context window but remain available for retrieval tools.
 
-    # Terminal condition: no tool calls = done
-    if not response.hasToolCalls():
-        return
+Keep `CLAUDE.md` files concise. Recommended maximums: global `CLAUDE.md` under 2000
+tokens, per-group `CLAUDE.md` under 2000 tokens. Verbose instruction files consume
+context budget that the agent needs for actual task work.
 
-    # Execute tools, yield observations
-    for toolCall in response.toolCalls:
-        result = await executeTool(toolCall)
-        context.append(result)
-        yield { type: "tool_result", content: result }
+### Session Model
 
-    # Recurse for next turn
-    yield* EZ(context, turnCount + 1)
-```
-
-This pattern enables the caller to consume results as an **async iterable**, providing
-natural backpressure and streaming output. The outer process can inject new messages
-into the context between turns without breaking the loop.
-
-### Streaming Input Mode
-
-For long-lived agents that receive follow-up messages while running, pass an
-`AsyncIterable` as the prompt source instead of a static string:
-
-| Input Mode | Behavior | Agent Teams |
-|------------|----------|-------------|
-| Static string | Single turn; stdin closes after first result | Breaks — subagents killed prematurely |
-| AsyncIterable | Multi-turn; stdin stays open | Works — subagents run to completion |
-
-The streaming input mode enables piping new messages (from chat, webhooks, IPC) directly
-into an active agent run, rather than queueing until the container exits.
+Each agent has **one active session per group folder**. The session is identified by
+its group folder path. In V2 multi-turn mode, the session persists between turns —
+the agent can be `idle` (no active SDK call) while the session remains `active`
+(context preserved in SDK subprocess memory or resumed via `sessionId`).
 
 ---
 
 ## 5. Control Plane (Gateway)
 
-The Gateway is the **central traffic controller** — the single source of truth for session state and the arbiter of concurrency.
+The Gateway is the **central traffic controller** — the single source of truth for
+session state and the arbiter of concurrency.
 
 ### Protocol
 
@@ -242,9 +217,11 @@ Communication uses a typed WebSocket protocol with three frame types:
 | `response` | gateway → client | `{ type: "res", id, ok, payload \| error }` |
 | `event`    | gateway → client | `{ type: "event", event, payload }` |
 
-**Mandatory handshake**: The first frame must be a `connect` request with authentication credentials. No work is dispatched before handshake completes.
+**Mandatory handshake**: The first frame must be a `connect` request with authentication
+credentials. No work is dispatched before handshake completes.
 
-**No event replay**: Events are fire-and-forget. Clients that miss events must explicitly refresh. This simplicity preserves invariant integrity.
+**No event replay**: Events are fire-and-forget. Clients that miss events must explicitly
+refresh. This simplicity preserves invariant integrity.
 
 > **Note**: This is the *internal gateway protocol* between input sources and the
 > control plane. The management console (see [FRONTEND_DESIGN.md](./FRONTEND_DESIGN.md))
@@ -282,11 +259,15 @@ explicit input sources feeding a consistent processing loop.**
 | **Scheduled timers** | Cron expression fires | Daily report generation at 9 AM |
 | **Hooks** | Internal event automation | Post-commit hook triggers code review agent |
 
-All five input types are normalized into the same event format and processed by the same agent loop. The agent cannot distinguish between a user typing a message and a webhook firing — both are just "turns."
+All five input types are normalized into the same event format and processed by the
+same orchestrator dispatch loop. The agent cannot distinguish between a user typing
+a message and a webhook firing — both are just "turns."
 
 ### Heartbeat Pattern
 
-Heartbeats are the mechanism that makes agents appear "always thinking." At a configurable cadence (e.g., every 30 minutes), the system sends the agent a heartbeat event. The agent evaluates its context and either:
+Heartbeats are the mechanism that makes agents appear "always thinking." At a
+configurable cadence (e.g., every 30 minutes), the system sends the agent a heartbeat
+event. The agent evaluates its context and either:
 
 - Responds `HEARTBEAT_OK` (nothing to do)
 - Takes proactive action (e.g., checking on a long-running deployment)
@@ -302,15 +283,24 @@ This is not continuous reasoning. It is a polling loop with a large interval.
 These types are the source of truth across all companion documents.
 
 ```
-AgentStatus = "idle" | "running" | "queued" | "error" | "timeout"
+AgentStatus   = "idle" | "running" | "queued" | "error" | "timeout"
 
 SessionStatus = "active" | "completed" | "error" | "timeout"
 
-SessionErrorSubtype = "max_turns" | "max_budget" | "execution"
-                    | "user_cancelled" | "steered"
+SessionErrorSubtype = "max_turns" | "max_budget" | "execution" | "user_cancelled"
 
-TaskStatus = "active" | "paused" | "completed"
+TaskStatus    = "active" | "paused" | "completed"
 ```
+
+### AgentStatus vs. SessionStatus
+
+An agent's status and its session's status are distinct:
+
+- An agent is `running` only during an active SDK `query()` or `session.send()` call.
+- An agent is `idle` when no SDK call is in flight. Its session may still be `active`
+  (context preserved, resumable via session ID).
+- A session is `active` from creation until it completes, times out, or errors — it
+  spans multiple agent turns.
 
 ### Session as Isolation Boundary
 
@@ -320,6 +310,8 @@ A **session** is the fundamental unit of isolation. Each session has:
 - An append-only transcript (JSONL)
 - A metadata record
 - An associated workspace (filesystem directory)
+
+Each agent has at most one active session per group folder at a time.
 
 ### Session Key Patterns
 
@@ -350,7 +342,7 @@ autonomous-agent/
 │   │   ├── messages/
 │   │   ├── tasks/
 │   │   ├── input/
-│   │   └── errors/
+│   │   └── dead-letter/              # Failed messages awaiting review
 │   ├── sessions/{groupFolder}/
 │   │   └── .claude/                  # SDK session persistence
 │   └── agent.db                      # SQLite (cursors, tasks, groups)
@@ -370,44 +362,46 @@ autonomous-agent/
 | **Session metadata** | JSON index | Survives restart | Read/write by Gateway |
 | **Workspace files** | Filesystem | Survives restart | Read/write by tools |
 | **Checkpoints** | State snapshots | Survives restart | Resume from last checkpoint |
-| **In-flight state** | Memory | Lost on crash | Reconstructed from transcript |
+| **In-flight state** | SDK subprocess memory | Lost on crash (in-process mode) | Reconstructed from transcript or resumed via session ID |
 
 ### Checkpoint Pattern
 
-For long-running or multi-step workflows, the system persists state snapshots at each node boundary:
+For long-running or multi-step workflows, the system persists state snapshots at each
+node boundary:
 
 1. Agent completes a tool call → checkpoint persisted
 2. System crashes → restart from last checkpoint
 3. No repeated work, no lost context
 
-This pattern (popularized by LangGraph) enables crash-safe resumption of complex multi-step workflows.
+This pattern (popularized by LangGraph) enables crash-safe resumption of complex
+multi-step workflows.
 
 ---
 
 ## 8. Hierarchical Memory Model
 
 Agents need persistent memory that survives across sessions and invocations. A
-hierarchical model (inspired by NanoClaw) provides scoped memory at multiple levels.
+hierarchical model provides scoped memory at multiple levels.
 
 ### Memory Hierarchy
 
 ```
-┌─────────────────────────────────────────────┐
-│              Global Memory                  │
-│  Shared preferences, facts, system context  │
-│  Writable: admin/main channel only          │
-│  Readable: all groups                       │
-├─────────────────────────────────────────────┤
-│          Group/Context Memory               │
-│  Per-group conversation history & context   │
-│  Writable: owning group only               │
-│  Readable: owning group only               │
-├─────────────────────────────────────────────┤
-│           Session Memory                    │
-│  Per-session transcript & working state     │
-│  Writable: active session only             │
-│  Readable: active session only             │
-└─────────────────────────────────────────────┘
++---------------------------------------------+
+|              Global Memory                  |
+|  Shared preferences, facts, system context  |
+|  Writable: admin/main channel only          |
+|  Readable: all groups                       |
++---------------------------------------------+
+|          Group/Context Memory               |
+|  Per-group conversation history & context   |
+|  Writable: owning group only                |
+|  Readable: owning group only                |
++---------------------------------------------+
+|           Session Memory                    |
+|  Per-session transcript & working state     |
+|  Writable: active session only              |
+|  Readable: active session only              |
++---------------------------------------------+
 ```
 
 ### Implementation
@@ -428,6 +422,9 @@ hierarchical model (inspired by NanoClaw) provides scoped memory at multiple lev
   accidental or malicious corruption of shared context.
 - **File-based simplicity**: Memory is stored as markdown files on disk — human-readable,
   version-controllable, and trivially backed up.
+- **Size discipline**: Keep CLAUDE.md files under 2000 tokens each. The SDK's
+  `PreCompact` hook is the signal that context is under pressure; proactive compactness
+  prevents reaching that point.
 
 ---
 
@@ -438,19 +435,30 @@ hierarchical model (inspired by NanoClaw) provides scoped memory at multiple lev
 Concurrency control uses a **two-stage lane-aware FIFO queue**:
 
 ```
-             ┌──────────────────────────────┐
-             │       Per-Session Lanes       │
-             │                              │
-Input ──────▶│  session:abc  ──▶ [Run]      │
-Input ──────▶│  session:def  ──▶ [Wait]     │──▶ Global Lane ──▶ Execute
-Input ──────▶│  session:abc  ──▶ [Queued]   │    (maxConcurrent)
-             │                              │
-             └──────────────────────────────┘
+             +------------------------------+
+             |       Per-Session Lanes       |
+             |                              |
+Input -------> session:abc  --> [Run]       |
+Input -------> session:def  --> [Wait]      |--> Global Lane --> Execute
+Input -------> session:abc  --> [Queued]    |    (maxConcurrent)
+             |                              |
+             +------------------------------+
 ```
 
-**Stage 1 — Per-session serialization**: Each session has its own FIFO lane. Only one run per session is active. Additional inputs queue behind.
+**Stage 1 — Per-session serialization**: Each session has its own FIFO lane. Only one
+run per session is active. Additional inputs queue behind.
 
-**Stage 2 — Global throttle**: All session lanes feed through a global lane with a configurable `maxConcurrent` cap. This prevents resource exhaustion (LLM rate limits, file I/O contention).
+**Stage 2 — Global throttle**: All session lanes feed through a global lane with a
+configurable `maxConcurrent` cap. This prevents resource exhaustion (API rate limits,
+file I/O contention).
+
+### API Rate Limit Considerations
+
+The orchestrator's `maxConcurrent` cap should be set **below** the Anthropic API's
+concurrent request limit for the account. The SDK handles HTTP 429 retries internally,
+but the orchestrator should independently track cumulative token usage from `cost_usd`
+fields in the output stream for budget enforcement. Do not rely on the SDK to stop
+itself when a cost budget is reached.
 
 ### Queue Modes
 
@@ -459,80 +467,106 @@ applies one of these policies:
 
 | Mode | Behavior | Use Case |
 |------|----------|----------|
-| `collect` | Coalesce queued messages into one follow-up turn | Default — batches rapid-fire user messages |
-| `followup` | Queue as next turn after current run completes | Sequential processing, order-sensitive work |
-| `steer` | Inject at next tool boundary, skip remaining tool calls | "Change course" — user overrides current plan |
-| `steer-backlog` | Steer immediately AND preserve for follow-up | Override + don't lose the message |
-| `interrupt` | Abort active run, execute new message | Emergency override (use sparingly) |
+| `collect` | Coalesce queued messages into one follow-up turn when the current run ends | Default — batches rapid-fire user messages |
+| `followup` | Queue as the next turn to be dispatched after current run completes | Sequential processing, order-sensitive work |
+| `interrupt` | Abort the active run via `AbortController`, then re-dispatch the new message | Emergency override; use sparingly |
 
-### Steering Mechanism
-
-Steering is the safe alternative to hard interruption:
-
-1. New message arrives while agent is executing tool calls
-2. After the current tool call completes (tool boundary), the queue is checked
-3. If a steering message exists, remaining tool calls are skipped
-4. The steering message is injected into context before the next LLM call
-5. The agent naturally incorporates the new instruction
-
-This preserves tool-call atomicity while enabling mid-run course correction.
+`steer` and `steer-backlog` modes require injecting messages into a running SDK turn,
+which the SDK does not support. Use `interrupt` when mid-run course correction is
+required, or `followup` when ordering matters and the current turn should complete.
 
 ### Transport Safety
 
-**Deduplication**: Short-lived cache keyed by `(channel, account, peer, session, messageId)` prevents duplicate deliveries from triggering multiple runs.
+**Deduplication**: Short-lived cache keyed by `(channel, account, peer, session, messageId)`
+prevents duplicate deliveries from triggering multiple runs.
 
-**Debouncing**: Rapid consecutive text messages are batched into a single agent turn via configurable `debounceMs`. Attachments and control commands bypass debouncing.
+**Debouncing**: Rapid consecutive text messages are batched into a single agent turn
+via configurable `debounceMs`. Attachments and control commands bypass debouncing.
 
 ---
 
-## 10. Container Isolation & Runtime
+## 10. Execution Models & Isolation
 
-OS-level container isolation (as implemented by NanoClaw) provides stronger security
-guarantees than application-level permission checks. Each agent invocation runs inside
-an ephemeral container with explicit resource boundaries.
+The SDK can be run in two execution models. Choose based on your security and latency
+requirements.
 
-### Container Architecture
+### Model A — In-Process (Default)
 
 ```
-┌─── Host Process ───────────────────────────────────────┐
-│                                                        │
-│  Orchestrator ──spawn──▶ Container (ephemeral, --rm)   │
-│       │                  ┌──────────────────────────┐  │
-│       │ stdin (secrets)  │  Agent Runtime            │  │
-│       │─────────────────▶│                          │  │
-│       │                  │  /workspace/group (rw)   │  │
-│       │◀─────────────────│  /workspace/project (ro) │  │
-│       │ stdout (results) │  /workspace/global (ro)  │  │
-│       │                  │  /workspace/ipc (rw)     │  │
-│       │                  │                          │  │
-│       │                  │  User: node (uid 1000)   │  │
-│       │                  └──────────────────────────┘  │
-└────────────────────────────────────────────────────────┘
++--- Orchestrator Process ----------------------------+
+|                                                     |
+|  Orchestrator ----spawn----> SDK subprocess         |
+|       |                      (JSON-lines stdio)     |
+|       |<--- message stream -----------------------+ |
+|       |                                           | |
+|       +--- state layer (files, SQLite) -----------+ |
++-----------------------------------------------------+
 ```
 
-### Mount Strategy
+The SDK runs as a subprocess within the orchestrator's process. All filesystem access
+is governed by the SDK's built-in permission system and the orchestrator's configuration.
 
-The mount system controls exactly what the agent can see and modify:
+**Tradeoffs**:
+
+| Property | In-Process |
+|----------|------------|
+| Latency | Low (no container startup) |
+| Isolation | SDK subprocess boundary only |
+| Security | Suitable for trusted, single-tenant deployments |
+| Complexity | Lower |
+| State | SDK subprocess memory persists during a turn |
+
+### Model B — Container-Isolated (Hardened)
+
+```
++--- Orchestrator Process ---------------------------+
+|                                                    |
+|  Orchestrator ----docker run --rm----> Container   |
+|       |                  +------------------+      |
+|       | (stdio)          |  SDK subprocess  |      |
+|       |<-----------------|                  |      |
+|       |                  | /workspace (rw)  |      |
+|       |                  | /project   (ro)  |      |
+|       |                  | /global    (ro)  |      |
+|       |                  |                  |      |
+|       |                  | uid: node (1000) |      |
+|       |                  +------------------+      |
++----------------------------------------------------+
+```
+
+The SDK runs inside an ephemeral Docker container (`--rm`) with explicit filesystem
+mounts. Each `query()` call uses one container; the container exits when the call
+completes. There is no long-lived container kept running between calls.
+
+**Tradeoffs**:
+
+| Property | Container-Isolated |
+|----------|--------------------|
+| Latency | Higher (container startup per call) |
+| Isolation | OS-level process and filesystem boundary |
+| Security | Defense-in-depth; suitable for multi-tenant or untrusted workloads |
+| Complexity | Higher (Dockerfile, mount management, allowlist) |
+| State | No in-memory state between calls; all state via mounts |
+
+### Mount Strategy (Container Mode)
 
 | Mount | Path in Container | Access | Purpose |
 |-------|-------------------|--------|---------|
 | Group folder | `/workspace/group` | Read-Write | Agent's working directory and memory |
 | Project root | `/workspace/project` | Read-Only | Source code access without mutation |
 | Global memory | `/workspace/global` | Read-Only | Shared context across all groups |
-| IPC directory | `/workspace/ipc` | Read-Write | File-based inter-process communication |
 | Sessions | `/home/node/.claude/` | Read-Write | SDK session persistence |
 | Extra mounts | `/workspace/extra/*` | Configurable | User-specified additional directories |
 
-### Mount Security
+### Mount Security (Container Mode)
 
-An **external allowlist** (`~/.config/nanoclaw/mount-allowlist.json`) stored outside the
-project root controls which additional host paths can be mounted. This file is never
-mounted into containers, preventing agents from modifying their own access rules.
+An **external allowlist** (`~/.config/nanoclaw/mount-allowlist.json`) stored outside
+the project root controls which additional host paths can be mounted. This file is
+never mounted into containers, preventing agents from modifying their own access rules.
 
-**Default blocked patterns** (17 categories):
-- SSH keys (`.ssh/`), Cloud credentials (`.aws/`, `.azure/`, `.gcloud/`)
-- Kubernetes config (`.kube/`), Package manager credentials (`.npmrc`, `.pypirc`)
-- Docker config, GPG keys, netrc, and other secrets
+**Default blocked patterns**: SSH keys (`.ssh/`), cloud credentials (`.aws/`, `.azure/`,
+`.gcloud/`), Kubernetes config (`.kube/`), package manager credentials (`.npmrc`,
+`.pypirc`), Docker config, GPG keys, netrc, and similar secrets.
 
 **Validation pipeline**:
 1. Resolve symlinks via `realpathSync()` — prevents symlink-based escapes
@@ -541,157 +575,90 @@ mounted into containers, preventing agents from modifying their own access rules
 4. Sanitize container paths — reject `..` traversal and absolute paths
 5. Enforce read-only for non-admin groups
 
-### Container Lifecycle
+### Choosing a Model
 
-1. **Build volume mounts** — Determine explicit mount list based on group type and allowlist
-2. **Spawn container** — Ephemeral (`--rm`), unprivileged user, stdio pipes
-3. **Inject secrets via stdin** — API keys and tokens pass through stdin, then are stripped
-4. **Stream output** — Parse marker-delimited output (`OUTPUT_START`/`OUTPUT_END`) for
-   real-time response streaming
-5. **Timeout management** — Hard timeout with reset on streaming output; short idle
-   timeout (10s) for tasks vs. 30 min for interactive sessions
-6. **Cleanup** — Container auto-removes; orphan detection kills abandoned containers
-
-### Per-Group Agent Customization
-
-Each group receives its own copy of the agent-runner source code. The container
-recompiles TypeScript on each start, enabling per-group tool configuration, custom
-hooks, and behavior differences — without affecting other groups.
-
-### Why Containers Over Application-Level Sandboxing
-
-| Approach | Strength | Weakness |
-|----------|----------|----------|
-| App-level permissions | Fine-grained, low overhead | Bypassable via prompt injection |
-| Container isolation | OS-enforced, defense-in-depth | Slight startup overhead |
-
-Containers provide a **hard boundary** that holds even if the agent is fully compromised
-by prompt injection. The agent cannot access files outside its mounts, regardless of
-what the LLM decides to do.
+```
+Start
+  |
+  +-- Is this a multi-tenant or untrusted-input deployment?
+  |   YES --> Container-Isolated (mandatory)
+  |   NO  --+
+  |         |
+  |   +-- Does the agent have shell/file access to sensitive paths?
+  |   |   YES --> Container-Isolated (recommended)
+  |   |   NO  --> In-Process (sufficient)
+```
 
 ---
 
 ## 11. Multi-Agent Orchestration Patterns
 
-When a single agent is insufficient, these patterns compose multiple agents. All patterns
-build on the same session, queue, and tool primitives.
+When a single agent is insufficient, these patterns compose multiple agents. All
+patterns build on the same session, queue, and tool primitives.
 
-### Pattern 1: Supervisor
+### Pattern 1: Single Agent (Default)
+
+A single agent handles the full task end-to-end using its tool set. This is the correct
+starting point. A single ReAct agent with good tools handles a surprising range of tasks.
+
+**When to use**: Tasks within a single domain, bounded scope, or where full transparency
+of reasoning is more important than parallelism.
+
+### Pattern 2: Supervisor
 
 ```
-                    ┌──────────────┐
-                    │  Supervisor  │
-                    │  Agent       │
-                    └──────┬───────┘
-                           │ delegates
-              ┌────────────┼────────────┐
-              ▼            ▼            ▼
-        ┌──────────┐ ┌──────────┐ ┌──────────┐
-        │ Research  │ │ Coding   │ │ Review   │
-        │ Agent     │ │ Agent    │ │ Agent    │
-        └──────────┘ └──────────┘ └──────────┘
+                    +--------------+
+                    |  Supervisor  |
+                    |  Agent       |
+                    +---------+----+
+                              | delegates
+             +-----------+----+----+-----------+
+             v           v        v           v
+       +----------+ +----------+ +----------+
+       | Research  | | Coding   | | Review   |
+       | Agent     | | Agent    | | Agent    |
+       +----------+ +----------+ +----------+
 ```
 
-A central supervisor receives the user request, decomposes it into subtasks, delegates
-to specialized agents, monitors progress, validates outputs, and synthesizes a final
-response.
+A central supervisor receives the user request, decomposes it into subtasks, dispatches
+each to a specialized agent via `query()`, monitors progress, validates outputs, and
+synthesizes a final response. Each subagent is a separate SDK invocation.
 
 **When to use**: Complex multi-domain workflows where reasoning transparency and quality
 assurance matter more than latency.
 
-### Pattern 2: Sequential Pipeline
-
-```
-Input ──▶ [Agent A] ──▶ [Agent B] ──▶ [Agent C] ──▶ Output
-           Extract       Transform      Validate
-```
-
-Each agent processes the output of the previous agent. Simple, predictable, and easy to
-debug.
-
-**When to use**: Clear linear dependencies where each stage refines the previous output.
-
 ### Pattern 3: Fan-Out / Parallel
 
 ```
-                    ┌──────────────┐
-                    │ Orchestrator │
-                    └──────┬───────┘
-                           │ dispatches
-              ┌────────────┼────────────┐
-              ▼            ▼            ▼
-        ┌──────────┐ ┌──────────┐ ┌──────────┐
-        │ Worker A │ │ Worker B │ │ Worker C │
-        └─────┬────┘ └─────┬────┘ └─────┬────┘
-              │            │            │
-              └────────────┼────────────┘
-                           ▼
-                    ┌──────────────┐
-                    │  Aggregator  │
-                    └──────────────┘
+                    +--------------+
+                    | Orchestrator |
+                    +-------+------+
+                            | dispatches (parallel query() calls)
+             +-----------+--+--+-----------+
+             v           v     v           v
+       +----------+ +----------+ +----------+
+       | Worker A | | Worker B | | Worker C |
+       +-----+----+ +-----+----+ +-----+----+
+             |            |            |
+             +------------+------------+
+                          v
+                    +--------------+
+                    |  Aggregator  |
+                    +--------------+
 ```
 
-Independent tasks execute in parallel. An aggregator collects and synthesizes results.
+Independent tasks execute in parallel via concurrent `query()` calls. An aggregator
+collects and synthesizes results. Each worker is a separate SDK invocation.
 
 **When to use**: Tasks with no inter-dependencies that benefit from parallel execution
-(e.g., searching multiple sources, running tests in parallel).
+(e.g., searching multiple sources, running tests across codebases).
 
-### Pattern 4: Generator-Critic
+### Pattern Limitations
 
-```
-        ┌──────────┐         ┌──────────┐
-        │Generator │────────▶│  Critic  │
-        │          │◀────────│          │
-        └──────────┘ refine  └──────────┘
-              │
-              ▼ (when approved)
-           Output
-```
-
-One agent generates output; another evaluates it against criteria. The loop repeats
-until the critic approves or a max iteration limit is reached.
-
-**When to use**: Tasks requiring quality assurance — code generation + review, content
-creation + editorial pass, plan generation + validation.
-
-### Pattern 5: Handoff / Delegation
-
-```
-User ──▶ [Triage Agent] ──handoff──▶ [Specialist Agent]
-                                           │
-                                     ──handoff──▶ [Another Specialist]
-```
-
-Agents dynamically transfer tasks to more appropriate specialists based on context.
-Each agent decides whether to handle directly or delegate.
-
-**When to use**: Customer support routing, multi-domain problem solving where the
-required expertise isn't known upfront.
-
-### Pattern 6: Hierarchical Teams
-
-```
-        ┌────────────────────┐
-        │   Executive Agent  │
-        └─────────┬──────────┘
-                  │
-        ┌─────────┼──────────┐
-        ▼                    ▼
-  ┌───────────┐        ┌───────────┐
-  │ Team Lead │        │ Team Lead │
-  │ (Backend) │        │ (Frontend)│
-  └─────┬─────┘        └─────┬─────┘
-        │                     │
-   ┌────┼────┐           ┌────┼────┐
-   ▼    ▼    ▼           ▼    ▼    ▼
-  [W1] [W2] [W3]       [W4] [W5] [W6]
-```
-
-Nested supervisors managing groups of specialists. Higher-level agents make strategic
-decisions; lower-level agents execute tactical tasks.
-
-**When to use**: Large-scale systems that mirror organizational structure — e.g., a
-software project with backend, frontend, and infrastructure teams.
+Patterns requiring **direct inter-agent communication** (streaming state to a peer,
+mid-run handoff, generator-critic loops with shared context) are not supported natively
+by the SDK. Agents can coordinate only by reading and writing to the shared state layer
+between turns. Design patterns accordingly.
 
 ---
 
@@ -714,33 +681,33 @@ software project with backend, frontend, and infrastructure teams.
 | **Workspace-scoped** | File write (within workspace), note-taking | Medium |
 | **IPC** | Send message, schedule task, manage tasks | Medium (authorization-scoped) |
 | **Browser** | Web navigation, form filling | Medium-High |
-| **System** | Shell execution, process management | High (safe inside containers) |
+| **System** | Shell execution, process management | High (safer inside containers) |
 | **External** | API calls, message sending, deployments | High |
 | **Destructive** | `rm -rf`, force push, production deploys, data deletion | Critical (always requires approval) |
 
-### MCP Server Pattern (NanoClaw)
+### MCP Server Pattern
 
-Tools can be exposed via **Model Context Protocol (MCP) servers** running alongside the
+Tools are exposed via **Model Context Protocol (MCP) servers** running alongside the
 agent. This decouples tool definitions from the agent runtime:
 
 ```
 Agent Runtime
-  │
-  ├── stdio MCP Server (in-process or subprocess)
-  │   ├── send_message     — Send to user/group
-  │   ├── schedule_task    — Create cron/interval/one-time tasks
-  │   ├── list_tasks       — View scheduled tasks
-  │   ├── pause_task       — Pause execution
-  │   ├── resume_task      — Resume execution
-  │   └── cancel_task      — Delete task
-  │
-  └── SDK Built-in Tools
-      ├── Bash (sandboxed in container)
-      ├── File ops (Read, Write, Edit, Glob, Grep)
-      ├── Web (WebSearch, WebFetch)
-      ├── Task (subagent spawner)
-      ├── TodoWrite (progress tracking)
-      └── Browser (Chromium automation)
+  |
+  +-- stdio MCP Server (in-process or subprocess)
+  |   +-- send_message     -- Send to user/group
+  |   +-- schedule_task    -- Create cron/interval/one-time tasks
+  |   +-- list_tasks       -- View scheduled tasks
+  |   +-- pause_task       -- Pause execution
+  |   +-- resume_task      -- Resume execution
+  |   +-- cancel_task      -- Delete task
+  |
+  +-- SDK Built-in Tools
+      +-- Bash (sandboxed in container mode)
+      +-- File ops (Read, Write, Edit, Glob, Grep)
+      +-- Web (WebSearch, WebFetch)
+      +-- Task (subagent spawner)
+      +-- TodoWrite (progress tracking)
+      +-- Browser (Chromium automation)
 ```
 
 The MCP server reads identity from environment variables (group folder, chat ID, admin
@@ -749,140 +716,52 @@ transport.
 
 ### Human-in-the-Loop Gates
 
-Tools at or above a configurable risk threshold require human approval before execution.
-The threshold defaults to `high` but can be lowered per-agent (e.g., `medium-high` for
-browser automation). `critical`-level operations always require approval regardless of
-configuration.
+The `PreToolUse` hook is the integration point for HITL gates. Tools at or above a
+configurable risk threshold require human approval before execution. `critical`-level
+operations always require approval regardless of configuration.
 
 ```
-toolCall = agent.nextAction()
-
-if toolCall.tool.riskLevel >= approvalThreshold or
-   toolCall.tool.riskLevel == "critical":
-    approval = requestHumanApproval(toolCall)
-    if not approval:
-        context.append("Tool call denied by user")
-        continue
-
-result = executeTool(toolCall)
+PreToolUse hook fires:
+  if toolCall.riskLevel >= approvalThreshold or toolCall.riskLevel == "critical":
+      wait for human approval
+      if denied: return { deny: true, reason: "..." }
+  return { allow: true }
 ```
 
-This makes orchestration synchronous at approval points. State must be checkpointed
-before and after gates to survive arbitrarily long wait times.
+State must be checkpointed before approval gates to survive arbitrarily long wait times.
 
 ---
 
-## 13. Skill System & Composable Extensions
+## 13. Code-Transform Skills
 
-Skills are the mechanism for extending agent capabilities without bloating the core.
-Two complementary approaches serve different purposes.
+Code-transform skills (the NanoClaw pattern) allow agent capabilities to be extended
+via source-code transformations applied at install time. Each skill modifies the
+installation to add exactly the features it provides, with three-way merge conflict
+resolution and mandatory test verification.
 
-### Runtime Skills (Plugin-Style)
-
-External tools loaded at runtime:
-
-- **Workspace plugins**: Discovered from the agent's working directory
-- **Managed plugins**: Installed and version-pinned by the operator
-- **Community plugins**: Third-party (treat as untrusted code)
-
-**Security warning**: Research shows ~26% of analyzed agent skills contain vulnerabilities
-(Cisco, 2025). Always pin versions, scan for vulnerabilities, and sandbox execution.
-
-### Code-Transform Skills (NanoClaw)
-
-A more radical approach: skills are **source-code transformations** that modify the
-installation itself. Each user's system becomes a unique composition of exactly the
-features they need.
-
-```
-skills/add-telegram/
-├── SKILL.md              # Instructions for AI-assisted application
-├── manifest.yaml         # Metadata, dependencies, tests
-├── add/                  # New files (copied directly)
-│   └── src/channels/telegram.ts
-├── modify/               # Full modified files (three-way merged)
-│   ├── src/index.ts
-│   └── src/index.ts.intent.md   # Structured merge guidance
-└── tests/
-    └── telegram.test.ts
-```
-
-### Three-Level Conflict Resolution
-
-When skills modify the same files, conflicts are resolved through escalation:
-
-| Level | Method | When Used |
-|-------|--------|-----------|
-| **1. Git** | `git merge-file` three-way merge | Deterministic, non-overlapping changes |
-| **2. AI** | Claude Code reads intent docs + manifests | Overlapping changes that require context |
-| **3. Human** | Manual resolution | Genuine application-level ambiguity |
-
-### Shared Base Architecture
-
-A clean snapshot of the core (`base/`) serves as the common ancestor for all
-three-way merges:
-
-```
-.nanoclaw/
-├── base/            # Clean core snapshot (stable merge ancestor)
-├── state.yaml       # Applied skills, file hashes, structured outcomes
-├── backup/          # Pre-operation safety copies
-├── custom/          # User modification patches
-└── resolutions/     # Verified conflict resolutions (hash-enforced)
-```
-
-### Key Skill Properties
-
-- **Mandatory tests**: Tests run even after clean merges — textual merge success
-  does not guarantee functional correctness.
-- **Uninstall = replay**: Removing a skill replays all remaining skills from the
-  clean base rather than attempting a reverse-patch.
-- **Structured operations**: `package.json`, `.env`, and `docker-compose.yml` are
-  never text-merged — they use deterministic aggregation (semver resolution, port
-  collision detection, dedup).
-- **Atomic backup/restore**: All files are backed up before modification; any failure
-  triggers full rollback.
-- **Deterministic replay**: Given `state.yaml`, an entire installation can be
-  reproduced on a fresh machine without AI assistance (all resolutions cached).
-
-### Intent Documentation
-
-Each modified file includes a companion `.intent.md` with structured headings that
-guide AI-assisted conflict resolution:
-
-```markdown
-## What this skill adds
-Adds Telegram webhook route and message handler.
-
-## Invariants
-- Must not interfere with other channel routes
-- Auth middleware must precede handler
-
-## Must-keep sections
-- Webhook verification flow (required by Telegram API)
-```
+This architecture supports code-transform skills as a tool-type but does not prescribe
+their implementation. See the NanoClaw documentation for the full specification.
 
 ---
 
 ## 14. Inter-Process Communication (IPC)
 
-Agents running inside containers need to communicate with the host orchestrator and
-with each other. File-based IPC provides a simple, auditable, container-compatible
-mechanism.
+Agents need to communicate with the host orchestrator. File-based IPC provides a
+simple, auditable mechanism that works with both execution models.
 
-### File-Based IPC Protocol (NanoClaw)
+### File-Based IPC Protocol
 
 ```
 data/ipc/{groupFolder}/
-├── messages/          # Agent → Host: send messages to users
-│   └── {timestamp}-{random}.json
-├── tasks/             # Agent → Host: schedule/manage tasks
-│   └── {timestamp}-{random}.json
-├── input/             # Host → Agent: follow-up messages
-│   ├── {timestamp}-{random}.json
-│   └── _close         # Sentinel: signal graceful shutdown
-└── errors/            # Failed IPC files (audit trail)
-    └── {source}-{filename}.json
++-- messages/          # Agent -> Host: send messages to users
+|   +-- {timestamp}-{random}.json
++-- tasks/             # Agent -> Host: schedule/manage tasks
+|   +-- {timestamp}-{random}.json
++-- input/             # Host -> Agent: follow-up messages
+|   +-- {timestamp}-{random}.json
+|   +-- _close         # Sentinel: signal graceful shutdown
++-- dead-letter/       # Failed messages awaiting operator review
+    +-- {source}-{filename}.json
 ```
 
 The `{random}` suffix prevents filename collisions when multiple messages arrive within
@@ -900,42 +779,27 @@ implicitly identifies the caller:
 | Manage tasks | All tasks | Own tasks only |
 | Register groups | Yes | No |
 
-### Message Piping (Follow-Up Without Respawn)
-
-Rather than spawning a new container for every follow-up message, the orchestrator
-**pipes messages into active containers** via IPC files:
-
-1. New message arrives for a group that has an active container
-2. Message written as JSON to `data/ipc/{group}/input/{timestamp}.json`
-3. Agent-runner polls `input/` directory at 1000ms intervals
-4. New messages are pushed into the `AsyncIterable` prompt stream
-5. Agent processes them as additional turns without losing context
-
-This avoids the cold-start cost of container spawning while maintaining the isolation
-guarantee — the container is already running with the correct mounts.
-
 ### Graceful Shutdown via Sentinel
 
 A special `_close` sentinel file signals the agent to wind down:
 
-1. Container enters idle state (no pending work)
+1. Container/process enters idle state (no pending work)
 2. After idle timeout, host writes `_close` to `input/`
-3. Agent-runner detects sentinel, ends the `AsyncIterable`
-4. SDK completes gracefully, container exits
-5. Docker's `--rm` flag cleans up automatically
+3. Agent-runner detects sentinel and ends its read loop
+4. SDK completes gracefully, process/container exits
 
 This is safer than SIGTERM because it allows the agent to complete any final tool
-calls and persist state.
+calls and persist state before exit.
 
 ### Atomic File Writes
 
 All IPC files use temp-file-then-rename for crash safety:
 
 ```
-write(data) → {path}.tmp → rename → {path}.json
+write(data) -> {path}.tmp -> rename -> {path}.json
 ```
 
-This prevents the poller from reading partially-written files.
+This prevents the reader from consuming partially-written files.
 
 ---
 
@@ -950,7 +814,7 @@ This prevents the poller from reading partially-written files.
 | **LLM refusal** | Rephrase, reduce scope, escalate | Content policy violation |
 | **State corruption** | Halt, alert, recover from checkpoint | Transcript parse error |
 | **Unrecoverable** | Halt, persist state, notify user | Auth revoked, quota exhausted |
-| **Container timeout** | Distinguish idle vs. stuck; cleanup accordingly | Hard timeout reached |
+| **Timeout** | Distinguish idle vs. stuck; cleanup accordingly | Hard timeout reached |
 
 ### Recovery Patterns
 
@@ -958,10 +822,10 @@ This prevents the poller from reading partially-written files.
 replays only the work performed since that checkpoint. No duplicate side effects thanks
 to idempotency keys.
 
-**Cursor rollback** (NanoClaw): The orchestrator maintains per-group message cursors.
-On agent failure, if no output has been sent to the user yet, the cursor rolls back to
-enable automatic retry. If output was already delivered, the cursor stays advanced to
-prevent duplicate messages.
+**Cursor rollback**: The orchestrator maintains per-group message cursors. On agent
+failure, if no output has been sent to the user yet, the cursor rolls back to enable
+automatic retry. If output was already delivered, the cursor stays advanced to prevent
+duplicate messages.
 
 **Graceful degradation**: If a tool fails, the agent receives the error as an observation
 and can reason about alternatives. The loop continues rather than crashing.
@@ -969,16 +833,27 @@ and can reason about alternatives. The loop continues rather than crashing.
 **Circuit breaker**: After N consecutive failures of the same tool, the tool is
 temporarily disabled. The agent is informed and must find alternative approaches.
 
-**Exponential backoff retry**: Failed message processing retries with `5s × 2^(attempt−1)`
-backoff (5s, 10s, 20s, 40s, 80s), up to a configurable max attempts (default: 5) before
-the message is dropped (but may be retried on the next incoming activity).
+**Exponential backoff retry**: Failed message processing retries with `5s × 2^(attempt-1)`
+backoff (5s, 10s, 20s, 40s, 80s), up to `maxRetries` (default: 3) before the message
+moves to the dead-letter store.
 
-**Orphan cleanup**: On startup, the system detects and stops abandoned containers from
-previous crashed runs, preventing resource leaks.
+**Orphan cleanup**: On startup, the system detects and stops abandoned containers or
+SDK subprocesses from previous crashed runs, preventing resource leaks.
 
-**Dead letter queue**: Messages that repeatedly fail processing are moved to a dead letter
-queue for human review rather than being silently dropped. IPC files that fail processing
-move to an `errors/` directory with source attribution.
+### Dead-Letter Store
+
+Messages that fail after `maxRetries` attempts are moved to the dead-letter store rather
+than being silently dropped:
+
+| Field | Contents |
+|-------|----------|
+| `originalMessage` | Full original message payload |
+| `errorDetails` | Last error encountered |
+| `retryCount` | Number of attempts made |
+| `timestamp` | Time of final failure |
+
+Dead-letter entries are stored in `data/ipc/{groupFolder}/dead-letter/`. Operators can
+replay or dismiss entries via the management console. Default retention: 7 days.
 
 ---
 
@@ -988,72 +863,45 @@ move to an `errors/` directory with source attribution.
 
 | Threat | Mitigation |
 |--------|------------|
-| **Prompt injection** | Container isolation (hard boundary), input sanitization, output tag stripping, separate system/user channels |
+| **Prompt injection** | Execution model isolation, input sanitization, output tag stripping, separate system/user channels |
 | **Tool abuse** | Least-privilege permissions, HITL gates, rate limiting, IPC authorization checks |
 | **Context leakage** | Session isolation, `dmScope` per-channel-peer, per-group filesystem namespaces |
-| **Credential exposure** | Secrets via stdin only (never on disk), stripped from subprocess environments, container-isolated |
-| **Plugin supply chain** | Version pinning, vulnerability scanning, sandboxed container execution |
+| **Credential exposure** | Secrets via environment variables only; never written to transcripts; not mounted in containers |
+| **Plugin supply chain** | Version pinning, vulnerability scanning, sandboxed execution |
 | **Replay attacks** | Mandatory handshake, no automatic event replay, session-bound tokens |
-| **Mount escape** | External allowlist (tamper-proof), symlink resolution, path traversal rejection, blocked patterns |
+| **Mount escape** (container mode) | External allowlist, symlink resolution, path traversal rejection, blocked patterns |
 | **Cross-group escalation** | Per-group IPC namespaces, identity-based authorization, read-only enforcement for non-admin |
 
 ### Defense in Depth
 
 ```
-Layer 1: Authentication     — Pairing codes, tokens, mandatory handshake
-Layer 2: Authorization      — Per-tool permissions, IPC identity checks, HITL gates
-Layer 3: Container Isolation — Process/filesystem/user separation, ephemeral --rm
-Layer 4: Mount Security      — External allowlist, blocked patterns, symlink resolution
-Layer 5: Secret Handling     — Stdin injection, environment stripping, never on disk
-Layer 6: Session Isolation   — Per-group namespaces, dmScope, workspace boundaries
-Layer 7: Validation          — Schema validation on all inputs/outputs
-Layer 8: Auditing            — Append-only transcripts, IPC error trails, tool logs
-Layer 9: Output Sanitization — Internal tag stripping before user-facing delivery
+Layer 1: Authentication   -- API keys, session tokens, mandatory handshake
+Layer 2: Authorization    -- RBAC, per-agent permission scopes, IPC identity checks
+Layer 3: Isolation        -- Container boundaries (container mode) or SDK subprocess
+                             boundary (in-process mode) — see §10 for tradeoffs
+Layer 4: Input Validation -- PreToolUse hooks for dangerous operations,
+                             secret sanitization, schema validation
+Layer 5: Auditing         -- PostToolUse logging, append-only transcripts,
+                             dead-letter store, IPC audit trail
 ```
+
+### Secret Handling
+
+Secrets follow a narrow, auditable path:
+
+- In-process mode: API keys are injected as environment variables to the SDK subprocess
+  at spawn time. They are not inherited by bash subprocesses spawned by tools.
+- Container mode: Secrets are injected via the container's environment at `docker run`
+  time. The host `.env` file is read by the orchestrator but is never mounted into the
+  container.
+
+In both modes, secrets are never written to transcripts, IPC files, or workspace files.
 
 ### Secure DM Mode
 
 When multiple users can message the same agent, `dmScope: "per-channel-peer"` isolates
 conversation context per sender and channel. Without this, User A's private messages
 could leak into User B's context.
-
-### Secret Handling Pipeline (NanoClaw)
-
-Secrets follow a narrow, auditable path:
-
-```
-.env file ──read──▶ readEnvFile() ──stdin──▶ Container
-                    (never loaded                │
-                     into process.env)           ▼
-                                          Agent Runtime
-                                          (sdkEnv only)
-                                                │
-                                          Stripped from
-                                          bash subprocesses
-```
-
-1. `.env` parsed with a custom reader that does NOT load into `process.env`
-2. Only `ANTHROPIC_API_KEY` and `CLAUDE_CODE_OAUTH_TOKEN` are extracted
-3. Injected into the container via stdin JSON
-4. Passed only to the SDK environment — explicitly excluded from bash subprocess envs
-5. Input object scrubbed after SDK initialization
-
-### Channel Abstraction & Routing Security
-
-A generic channel interface supports multiple messaging platforms:
-
-```
-interface Channel {
-    name: string
-    connect(): Promise<void>
-    sendMessage(jid: string, text: string): Promise<void>
-    ownsJid(jid: string): boolean
-    disconnect(): Promise<void>
-}
-```
-
-Outbound routing validates that a channel both owns and is connected to the target JID
-before delivery. This prevents messages from being sent through the wrong channel.
 
 ---
 
@@ -1064,12 +912,10 @@ before delivery. This prevents messages from being sent through the wrong channe
 | Pillar | What to Capture |
 |--------|-----------------|
 | **Tracing** | Full reasoning chain: input → thought → action → observation → output. Replay any agent decision path. |
-| **Metrics** | Token usage, latency per turn, tool call success/failure rates, queue depth, session count, container lifecycle. |
+| **Metrics** | Token usage, cost per turn, latency per turn, tool call success/failure rates, queue depth, session count. |
 | **Logging** | Append-only transcripts serve as structured logs. Every tool call, LLM response, and state transition is recorded. Per-group log files with ISO timestamps. |
 
 ### Evaluation Framework
-
-Adopt a tiered evaluation strategy:
 
 | Tier | Scope | Cadence |
 |------|-------|---------|
@@ -1083,79 +929,61 @@ Adopt a tiered evaluation strategy:
 - **Task completion rate**: % of tasks successfully completed end-to-end
 - **Tool selection accuracy**: Did the agent pick the right tool?
 - **Parameter accuracy**: Were tool parameters correct?
-- **Turns to completion**: How many loop iterations to reach the answer?
-- **Cost per task**: Total token spend per completed task
+- **Turns to completion**: How many SDK turns to reach the answer?
+- **Cost per task**: Total token spend per completed task (`cost_usd` accumulation)
 - **Error rate by category**: Transient vs. tool vs. LLM vs. state errors
-- **Container utilization**: Active vs. idle time, orphan count, timeout frequency
+- **Dead-letter volume**: Messages per day reaching the dead-letter store
 
 ---
 
 ## 18. Pattern Selection Guide
 
-Use this decision tree to choose the right architecture for your use case:
+### Orchestration Pattern
 
 ```
 Start
-  │
-  ├─ Is the task fully defined with clear steps?
-  │   YES ──▶ Sequential Pipeline
-  │   NO  ──┐
-  │         │
-  │   ├─ Does it require a single domain of expertise?
-  │   │   YES ──▶ Single ReAct Agent
-  │   │   NO  ──┐
-  │   │         │
-  │   │   ├─ Are subtasks independent (parallelizable)?
-  │   │   │   YES ──▶ Fan-Out / Parallel
-  │   │   │   NO  ──┐
-  │   │   │         │
-  │   │   │   ├─ Does output need iterative quality refinement?
-  │   │   │   │   YES ──▶ Generator-Critic
-  │   │   │   │   NO  ──┐
-  │   │   │   │         │
-  │   │   │   │   ├─ Is routing domain-dependent?
-  │   │   │   │   │   YES ──▶ Handoff / Delegation
-  │   │   │   │   │   NO  ──▶ Supervisor or Hierarchical
+  |
+  +-- Is the task within a single domain with clear scope?
+  |   YES --> Single Agent
+  |   NO  --+
+  |         |
+  |   +-- Are subtasks independent (parallelizable)?
+  |   |   YES --> Fan-Out / Parallel
+  |   |   NO  --+
+  |   |         |
+  |   |   +--> Supervisor
 ```
 
-### Isolation Strategy Selection
+### Execution Model
 
 ```
 Start
-  │
-  ├─ Do agents need shell/file access?
-  │   NO  ──▶ Application-level sandboxing (sufficient)
-  │   YES ──┐
-  │         │
-  │   ├─ Is the agent processing untrusted input?
-  │   │   YES ──▶ Container isolation (mandatory)
-  │   │   NO  ──┐
-  │   │         │
-  │   │   ├─ Multiple tenants/groups sharing one system?
-  │   │   │   YES ──▶ Container + per-group namespaces
-  │   │   │   NO  ──▶ Container (recommended) or process-level
+  |
+  +-- Multi-tenant or untrusted input?
+  |   YES --> Container-Isolated (mandatory)
+  |   NO  --+
+  |         |
+  |   +-- Agent has shell/file access to sensitive paths?
+  |   |   YES --> Container-Isolated (recommended)
+  |   |   NO  --> In-Process (sufficient)
 ```
 
-### Complexity vs. Capability Tradeoff
+### Capability vs. Complexity
 
 ```
-Capability ▲
-           │                              ┌─────────────┐
-           │                        ┌─────│ Hierarchical│
-           │                  ┌─────│     │   Teams     │
-           │            ┌─────│     │     └─────────────┘
-           │      ┌─────│     │ Supervisor
-           │      │     │  Fan-Out    │
-           │      │  Generator-       │
-           │   Single  Critic         │
-           │   Agent    │             │
-           │      │     │             │
-           └──────┴─────┴─────────────┴──────────▶ Complexity
+Capability ^
+           |                    +-----------+
+           |               +---| Supervisor |
+           |         +-----+   +-----------+
+           |   +-----| Fan-Out
+           |   | Single
+           |   | Agent
+           |   |
+           +---+----------------------------> Complexity
 ```
 
 **Rule of thumb**: Start with the simplest pattern that works. Graduate to more complex
-patterns only when you hit concrete limitations. A single ReAct agent with good tools
-handles a surprising range of tasks.
+patterns only when you hit concrete limitations.
 
 ---
 
@@ -1169,7 +997,7 @@ handles a surprising range of tasks.
 ### Primary Sources
 
 - [OpenClaw Architecture Part 1: Control Flow](https://theagentstack.substack.com/p/openclaw-architecture-part-1-control) — Hub-and-spoke Gateway architecture, input model, session isolation, protocol design
-- [OpenClaw Architecture Part 2: Concurrency](https://theagentstack.substack.com/p/openclaw-architecture-part-2-concurrency) — Two-stage queue model, steering, deduplication, transport safety
+- [OpenClaw Architecture Part 2: Concurrency](https://theagentstack.substack.com/p/openclaw-architecture-part-2-concurrency) — Two-stage queue model, deduplication, transport safety
 - [NanoClaw](https://github.com/qwibitai/nanoclaw) — Container-isolated agent runtime, file-based IPC, hierarchical memory, skills-as-code-transforms, per-group namespace isolation
 
 ### Industry References
@@ -1178,9 +1006,7 @@ handles a surprising range of tasks.
 - [Google Cloud — Choose a Design Pattern for Agentic AI](https://docs.cloud.google.com/architecture/choose-design-pattern-agentic-ai-system) — Decision framework for pattern selection
 - [KDnuggets — 5 Essential Design Patterns for Agentic AI](https://www.kdnuggets.com/5-essential-design-patterns-for-building-robust-agentic-ai-systems) — ReAct, state graphs, generator-critic, multi-agent loops
 - [Confluent — Four Design Patterns for Event-Driven Multi-Agent Systems](https://www.confluent.io/blog/event-driven-multi-agent-systems/) — Event-driven orchestration
-- [OpenAI Agents SDK — Orchestrating Multiple Agents](https://openai.github.io/openai-agents-python/multi_agent/) — Handoff and delegation patterns
 - [Speakeasy — Architecture Patterns for Agentic Applications](https://www.speakeasy.com/mcp/using-mcp/ai-agents/architecture-patterns) — Practical pattern guide
-- [Kore.ai — Choosing the Right Orchestration Pattern](https://www.kore.ai/blog/choosing-the-right-orchestration-pattern-for-multi-agent-systems) — Multi-agent orchestration comparison
 
 ### Security
 
@@ -1188,4 +1014,4 @@ handles a surprising range of tasks.
 
 ---
 
-*Document generated 2026-02-25. This is a living reference — update as patterns mature and new invariants emerge.*
+*Document updated 2026-02-25. This is a living reference — update as patterns mature and new invariants emerge.*

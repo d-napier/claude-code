@@ -19,7 +19,7 @@
 8. [Subagents & Multi-Agent Orchestration](#8-subagents--multi-agent-orchestration)
 9. [Hooks — Intercepting Agent Behavior](#9-hooks--intercepting-agent-behavior)
 10. [Input Sources & Autonomy](#10-input-sources--autonomy)
-11. [Container Isolation](#11-container-isolation)
+11. [Container Isolation (Optional)](#11-container-isolation-optional)
 12. [File-Based IPC](#12-file-based-ipc)
 13. [Security Implementation](#13-security-implementation)
 14. [Error Handling & Recovery](#14-error-handling--recovery)
@@ -63,10 +63,18 @@ set permissions, define hooks, and consume the message stream.
 
 | API | Stability | Best For |
 |-----|-----------|----------|
-| **V1**: `query()` | Stable | Single-turn, batch, CI/CD, simple agents |
-| **V2**: `createSession()` + `send()`/`stream()` | Preview (`unstable_`) | Multi-turn conversations, interactive agents |
+| **V1**: `query()` | Stable | Single-turn, batch, cron tasks, and multi-turn via `resume` |
+| **V2**: `createSession()` + `send()`/`stream()` | Preview (`unstable_`) | Multi-turn interactive sessions with explicit turn control |
 
-Both use the identical CLI process and `EZ()` loop — zero behavioral difference.
+V1 and V2 serve different use cases. **V1 `query()`** is the primary API for this
+system. It handles one turn per call and supports multi-turn conversations through
+the `resume: sessionId` option — each call resumes the same persisted transcript.
+**V2 `createSession()`** provides a stateful session object with explicit
+`send()`/`stream()` methods for sequential turn-taking; it is preview-stability and
+suited for interactive agent shells where the caller directly controls when each
+turn fires.
+
+The primary execution model in this guide is in-process V1 `query()`.
 
 ---
 
@@ -77,7 +85,7 @@ autonomous-agent/
 ├── src/
 │   ├── index.ts              # Orchestrator — message loop, startup, shutdown
 │   ├── config.ts             # Configuration constants and env loading
-│   ├── agent-runner.ts       # Wraps SDK query()/createSession() calls
+│   ├── agent-runner.ts       # Wraps SDK query() calls
 │   ├── group-queue.ts        # Per-group concurrency with global cap
 │   ├── scheduler.ts          # Cron/interval/one-time task scheduling
 │   ├── ipc.ts                # File-based IPC watcher and authorization
@@ -99,9 +107,13 @@ autonomous-agent/
 ├── groups/
 │   ├── global/CLAUDE.md      # Global memory (shared, admin-writable)
 │   └── {name}/CLAUDE.md      # Per-group memory
-├── container/
-│   ├── Dockerfile            # Agent container image
-│   └── agent-runner/         # In-container agent runner
+├── data/
+│   ├── sessions/             # SDK transcript persistence (via resume)
+│   ├── ipc/                  # File-based IPC directories
+│   └── dead-letter/          # Failed messages after max retries
+├── container/                # Optional: container isolation mode
+│   ├── Dockerfile
+│   └── agent-runner/
 ├── .claude/
 │   ├── settings.json         # Project-level SDK settings
 │   └── CLAUDE.md             # Project instructions
@@ -116,7 +128,13 @@ autonomous-agent/
 The SDK runs the ReAct loop internally. Your wrapper function configures it and
 consumes the message stream.
 
-### V1: query() — Single-Turn / Batch
+### V1: query() — The Primary API
+
+`query()` is used for all agent invocations in this system, both single-turn batch
+tasks and multi-turn conversations (via `resume`). One call to `query()` equals one
+turn. The SDK's internal ReAct loop handles tool calls within that turn; your code
+resumes the session for the next turn by calling `query()` again with the same
+`sessionId`.
 
 ```typescript
 import { query, type SDKMessage } from "@anthropic-ai/claude-agent-sdk";
@@ -130,7 +148,8 @@ interface AgentResult {
 async function runAgent(
   prompt: string,
   groupFolder: string,
-  sessionId?: string
+  sessionId?: string,
+  abortController?: AbortController
 ): Promise<AgentResult> {
   const q = query({
     prompt,
@@ -139,6 +158,7 @@ async function runAgent(
       resume: sessionId,
 
       // Model and budget controls
+      // top-level options.model uses full model IDs
       model: "claude-sonnet-4-6",
       maxTurns: 50,
       maxBudgetUsd: 2.0,
@@ -149,7 +169,7 @@ async function runAgent(
       permissionMode: "bypassPermissions",
       allowDangerouslySkipPermissions: true,
 
-      // Load CLAUDE.md from project and group directories
+      // Load CLAUDE.md from group directory and parents
       settingSources: ["project"],
       cwd: `./groups/${groupFolder}`,
 
@@ -180,6 +200,7 @@ async function runAgent(
           description: "Research agent for web search and analysis",
           prompt: "You are a research specialist. Search the web and analyze findings.",
           tools: ["WebSearch", "WebFetch", "Read", "Glob", "Grep"],
+          // AgentDefinition.model uses aliases: "sonnet", "opus", "haiku", "inherit"
           model: "haiku"
         },
         coder: {
@@ -188,7 +209,9 @@ async function runAgent(
           tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"],
           model: "sonnet"
         }
-      }
+      },
+
+      abortController
     }
   });
 
@@ -234,7 +257,7 @@ async function runAgent(
 | `maxTurns` reached | `result.subtype = "error_max_turns"` |
 | `maxBudgetUsd` exceeded | `result.subtype = "error_max_budget_usd"` |
 | `abortController.abort()` | Agent interrupted |
-| Stop hook returns `{ continue: false }` | Agent stopped by hook |
+| Stop hook returns `{ continue: true }` | Agent resumes (hook overrides natural stop) |
 
 ### Mapping SDK Results to Canonical Statuses
 
@@ -248,7 +271,8 @@ subtypes as follows:
 | `"error_max_turns"` | `"error"` | `"error"` | `"max_turns"` |
 | `"error_max_budget_usd"` | `"error"` | `"error"` | `"max_budget"` |
 | `"error_during_execution"` | `"error"` | `"error"` | `"execution"` |
-| (abort + steer message) | `"running"` | `"active"` | `"steered"` |
+| `"error_max_structured_output_retries"` | `"error"` | `"error"` | `"structured_output"` |
+| (abort + re-queue) | `"running"` | `"active"` | `"interrupted"` |
 | (abort by user) | `"idle"` | `"completed"` | `"user_cancelled"` |
 | (container hard timeout) | `"timeout"` | `"timeout"` | — |
 
@@ -259,10 +283,41 @@ While an agent is in the queue, its status is `"queued"`. While executing, it is
 
 ## 4. Multi-Turn Sessions
 
-For interactive agents that receive follow-up messages while running, use the V2
-session API or V1 with `AsyncIterable` prompt.
+### Multi-Turn via V1 query() with resume (Primary Pattern)
 
-### V2: createSession() + send()/stream()
+The simplest multi-turn pattern uses V1 `query()` with `resume: sessionId`. Each
+inbound message triggers a new `query()` call. The SDK restores the full conversation
+transcript from the session store automatically.
+
+```typescript
+// Turn 1 — no sessionId yet
+const turn1 = await runAgent("Analyze the codebase", groupFolder);
+const sessionId = turn1.sessionId;
+
+// Turn 2 — resume the same conversation
+const turn2 = await runAgent("Now write the tests", groupFolder, sessionId);
+
+// Turn 3 — same session continues
+const turn3 = await runAgent("Run the tests and fix any failures", groupFolder, sessionId);
+```
+
+This is the pattern used by `GroupQueue`. Each dispatched message becomes one
+`query()` call with `resume: sessionId`. The SDK's built-in transcript persistence
+makes the conversation continuous from the model's perspective.
+
+### V2: createSession() — Multi-Turn Interactive Sessions (Preview)
+
+V2 provides an explicit session object with `send()`/`stream()` methods. Use it
+when your application needs direct control over individual turns — for example, an
+interactive agent shell where a human drives each turn.
+
+**Important constraints:**
+- Turn-taking is strictly sequential: call `send()`, then consume `stream()` to
+  completion, then call `send()` again for the next turn.
+- You **cannot** inject a new message into a running `stream()`. If a new message
+  arrives while streaming, buffer it and dispatch it after the current stream
+  finishes.
+- V2 is preview stability (`unstable_` prefix). API may change.
 
 ```typescript
 import {
@@ -271,128 +326,55 @@ import {
   type SDKMessage
 } from "@anthropic-ai/claude-agent-sdk";
 
-class AgentSession {
-  private session: ReturnType<typeof unstable_v2_createSession>;
-  public sessionId?: string;
+const opts = {
+  // V2 session options do not take a top-level model — configure via AgentDefinition
+  // or use the session's own model field if available
+  cwd: `./groups/${groupFolder}`,
+  settingSources: ["project"] as const,
+  allowedTools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep", "Task"],
+  permissionMode: "bypassPermissions" as const,
+  allowDangerouslySkipPermissions: true,
+  mcpServers: { agent: createAgentMcpServer(groupFolder) },
+  hooks: buildHooks(groupFolder)
+};
 
-  constructor(
-    private groupFolder: string,
-    resumeId?: string
-  ) {
-    const opts = {
-      model: "claude-sonnet-4-6",
-      cwd: `./groups/${groupFolder}`,
-      settingSources: ["project"] as const,
-      allowedTools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep", "Task"],
-      permissionMode: "bypassPermissions" as const,
-      allowDangerouslySkipPermissions: true,
-      mcpServers: { agent: createAgentMcpServer(groupFolder) },
-      hooks: buildHooks(groupFolder)
-    };
+const session = resumeId
+  ? unstable_v2_resumeSession(resumeId, opts)
+  : unstable_v2_createSession(opts);
 
-    this.session = resumeId
-      ? unstable_v2_resumeSession(resumeId, opts)
-      : unstable_v2_createSession(opts);
-  }
+async function sendTurn(
+  message: string,
+  onOutput: (text: string) => void
+): Promise<string> {
+  // 1. Send the user message
+  await session.send(message);
 
-  async sendAndStream(
-    message: string,
-    onOutput: (text: string) => void
-  ): Promise<string> {
-    await this.session.send(message);
-
-    let result = "";
-    for await (const msg of this.session.stream()) {
-      this.sessionId ??= msg.session_id;
-
-      if (msg.type === "assistant") {
-        for (const block of msg.message.content) {
-          if (block.type === "text") {
-            onOutput(block.text);
-          }
-        }
-      }
-      if (msg.type === "result" && msg.subtype === "success") {
-        result = msg.result;
+  // 2. Consume the full stream for this turn before sending again
+  let result = "";
+  for await (const msg of session.stream()) {
+    if (msg.type === "assistant") {
+      for (const block of msg.message.content) {
+        if (block.type === "text") onOutput(block.text);
       }
     }
-    return result;
-  }
-
-  close() {
-    this.session.close();
-  }
-}
-```
-
-### V1: AsyncIterable for Streaming Input
-
-When you need to pipe follow-up messages into an already-running agent:
-
-```typescript
-import { query, type SDKUserMessage } from "@anthropic-ai/claude-agent-sdk";
-
-class MessageStream implements AsyncIterable<SDKUserMessage> {
-  private queue: SDKUserMessage[] = [];
-  private resolve?: () => void;
-  private done = false;
-
-  push(text: string) {
-    const msg: SDKUserMessage = {
-      type: "user",
-      session_id: "",
-      message: {
-        role: "user",
-        content: [{ type: "text", text }]
-      },
-      parent_tool_use_id: null
-    };
-    this.queue.push(msg);
-    this.resolve?.();
-  }
-
-  end() {
-    this.done = true;
-    this.resolve?.();
-  }
-
-  async *[Symbol.asyncIterator]() {
-    while (!this.done || this.queue.length > 0) {
-      if (this.queue.length > 0) {
-        yield this.queue.shift()!;
-      } else {
-        await new Promise<void>(r => { this.resolve = r; });
-      }
+    if (msg.type === "result" && msg.subtype === "success") {
+      result = msg.result;
     }
   }
+  return result;
 }
 
-// Usage: pipe follow-up messages into the running agent
-const stream = new MessageStream();
-stream.push("Initial prompt: analyze the codebase");
-
-const q = query({
-  prompt: stream,  // AsyncIterable — keeps stdin open
-  options: { /* ... */ }
-});
-
-// Later, pipe follow-up messages
-stream.push("Also check for security vulnerabilities");
-
-// When done, end the stream
-stream.end();
+// When done
+session.close();
 ```
-
-**Critical**: Passing a string prompt sets `isSingleUserTurn = true`, which closes
-stdin after the first result and kills running subagents. Always use `AsyncIterable`
-when using agent teams or multi-turn interactions.
 
 ---
 
 ## 5. Hierarchical Memory via CLAUDE.md
 
-The SDK automatically loads `CLAUDE.md` files when `settingSources: ["project"]` is set.
-This enables the hierarchical memory model from the design doc.
+The SDK automatically loads `CLAUDE.md` files when `settingSources: ["project"]` is
+set and `systemPrompt.preset = "claude_code"`. This enables the hierarchical memory
+model from the design doc.
 
 ### Directory Structure
 
@@ -400,7 +382,6 @@ This enables the hierarchical memory model from the design doc.
 groups/
 ├── global/
 │   └── CLAUDE.md       # Global memory — shared facts, preferences
-│                       # Loaded for ALL groups via additionalDirectories
 ├── main/
 │   └── CLAUDE.md       # Main channel memory — admin context
 └── team-alpha/
@@ -427,14 +408,19 @@ const q = query({
 
 The SDK loads `CLAUDE.md` from:
 1. The `cwd` directory (group-specific memory)
-2. Parent directories (walks up the tree)
+2. Parent directories walking up the tree
 3. `additionalDirectories` (global memory)
 
-> **Note**: The design doc describes three memory levels: Global, Group, and Session.
-> The first two are `CLAUDE.md` files loaded here. **Session-level memory** is handled
-> by the SDK's built-in session transcript persistence (via `resume: sessionId`) — it
-> is not a third `CLAUDE.md` file. Session state lives in
-> `data/sessions/{groupFolder}/.claude/`.
+> **Memory levels**: The design doc describes three memory levels: Global, Group,
+> and Session. The first two are `CLAUDE.md` files loaded here. **Session-level
+> memory** is the SDK's built-in transcript persistence, restored automatically
+> when you pass `resume: sessionId`. It is not a third `CLAUDE.md` file. Session
+> transcripts live in `data/sessions/{groupFolder}/.claude/`.
+>
+> **In-container mode**: `settingSources: ["project"]` causes the SDK to look for
+> `.claude/settings.json` relative to `cwd`. When running inside a container,
+> mount the project's `.claude/` directory into the container's working directory
+> so settings are found correctly.
 
 ### Writing to Memory
 
@@ -451,7 +437,8 @@ const protectGlobalMemory: HookCallback = async (input, toolUseID, { signal }) =
   if (filePath?.includes("groups/global") && !isMainGroup) {
     return {
       hookSpecificOutput: {
-        hookEventName: input.hook_event_name,
+        // Use a string literal, not input.hook_event_name, for type safety
+        hookEventName: "PreToolUse" as const,
         permissionDecision: "deny",
         permissionDecisionReason: "Only the main group can modify global memory"
       }
@@ -469,100 +456,258 @@ Implement the two-stage lane architecture from the design doc.
 
 ### Queue Modes
 
-The design doc defines five named queue modes that determine how follow-up messages
-are handled when an agent is already running. Implement these as a per-group setting:
+Three queue modes determine how a new message is handled when the group already
+has an active `query()` running:
 
-| Mode | Behavior | Implementation |
-|------|----------|----------------|
-| `collect` | Coalesce queued messages into one follow-up turn | Buffer in `pendingMessages`, concatenate on drain |
-| `followup` | Queue as next turn after current run completes | Append to `pendingMessages`, process FIFO on drain |
-| `steer` | Inject at next tool boundary, skip remaining tools | Write to IPC `input/`, agent checks between tool calls |
-| `steer-backlog` | Steer immediately AND preserve for follow-up | Write to IPC `input/` + append to `pendingMessages` |
-| `interrupt` | Abort active run, execute new message | Call `abortController.abort()`, then enqueue new message |
+| Mode | Behavior | When to Use |
+|------|----------|-------------|
+| `collect` | Buffer new messages; batch them into a single prompt for the next `query()` call after current finishes | High-volume groups where individual messages aren't urgent |
+| `followup` | Queue the new message; dispatch it as the next `query()` call after current finishes (FIFO) | Default for most groups |
+| `interrupt` | Abort the current `query()` via `AbortController`; re-queue the interrupted message and the new message; dispatch a fresh `query()` | Urgent messages that must preempt current work |
 
-The `pipeToActiveSession()` method routes to the correct behavior based on the
-group's configured queue mode.
+A `debounceMs` config per group applies to `collect` mode: rapid messages arriving
+within the debounce window are accumulated into the batch before dispatch.
 
 ### GroupQueue Implementation
 
 ```typescript
-interface GroupState {
-  active: boolean;
-  pendingMessages: QueuedMessage[];
-  pendingTasks: QueuedTask[];
-  session?: AgentSession;
+interface QueuedMessage {
+  text: string;
+  timestamp: number;
+  id: string;
   retryCount: number;
 }
 
+interface GroupState {
+  active: boolean;
+  abortController?: AbortController;
+  pendingMessages: QueuedMessage[];
+  batchBuffer: QueuedMessage[];   // collect mode accumulation
+  debounceTimer?: NodeJS.Timeout;
+  sessionId?: string;
+}
+
+interface GroupConfig {
+  queueMode: "collect" | "followup" | "interrupt";
+  debounceMs: number;             // applies to collect mode; 0 = no debounce
+  maxRetries: number;             // default 3
+}
+
+type DeadLetterEntry = {
+  message: QueuedMessage;
+  groupFolder: string;
+  error: string;
+  failedAt: string;
+};
+
 class GroupQueue {
   private groups = new Map<string, GroupState>();
+  private configs = new Map<string, GroupConfig>();
   private activeCount = 0;
   private waitingGroups: string[] = [];
-  private processFn?: (group: string, message: string) => Promise<void>;
+  private processFn?: (group: string, message: string, abort: AbortController) => Promise<void>;
+
+  // Deduplication cache: key = "channel:groupFolder:messageId"
+  private seenIds = new Map<string, number>();  // value = expiry timestamp
+  private dedupeWindowMs = 30_000;
 
   constructor(private maxConcurrent: number = 5) {}
 
-  setProcessFn(fn: (group: string, message: string) => Promise<void>) {
+  setProcessFn(fn: (group: string, message: string, abort: AbortController) => Promise<void>) {
     this.processFn = fn;
   }
 
-  async enqueue(groupFolder: string, message: string) {
+  setGroupConfig(groupFolder: string, config: GroupConfig) {
+    this.configs.set(groupFolder, config);
+  }
+
+  private getConfig(groupFolder: string): GroupConfig {
+    return this.configs.get(groupFolder) ?? {
+      queueMode: "followup",
+      debounceMs: 0,
+      maxRetries: 3
+    };
+  }
+
+  /** Call with a channel-scoped dedup key to prevent duplicate processing. */
+  async enqueue(groupFolder: string, message: string, dedupKey?: string) {
+    // Deduplication — prevent polling overlap from reprocessing the same message
+    if (dedupKey) {
+      const now = Date.now();
+      // Prune expired entries
+      for (const [k, exp] of this.seenIds) {
+        if (exp < now) this.seenIds.delete(k);
+      }
+      const key = `${groupFolder}:${dedupKey}`;
+      if (this.seenIds.has(key)) return;
+      this.seenIds.set(key, now + this.dedupeWindowMs);
+    }
+
     const state = this.getOrCreateState(groupFolder);
+    const queued: QueuedMessage = {
+      text: message,
+      timestamp: Date.now(),
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      retryCount: 0
+    };
 
     if (state.active) {
-      // Group already has an active agent — pipe via IPC or queue
-      if (state.session) {
-        // Pipe directly into running session
-        await this.pipeToActiveSession(state, message);
-      } else {
-        state.pendingMessages.push({ text: message, timestamp: Date.now() });
-      }
+      await this.pipeToActiveSession(groupFolder, state, queued);
       return;
     }
 
     if (this.activeCount >= this.maxConcurrent) {
-      // At capacity — queue the group
-      state.pendingMessages.push({ text: message, timestamp: Date.now() });
+      state.pendingMessages.push(queued);
       if (!this.waitingGroups.includes(groupFolder)) {
         this.waitingGroups.push(groupFolder);
       }
       return;
     }
 
-    // Execute immediately
-    await this.execute(groupFolder, message);
+    await this.execute(groupFolder, queued);
   }
 
-  private async execute(groupFolder: string, message: string) {
+  private async pipeToActiveSession(
+    groupFolder: string,
+    state: GroupState,
+    queued: QueuedMessage
+  ) {
+    const config = this.getConfig(groupFolder);
+
+    switch (config.queueMode) {
+      case "collect": {
+        // Accumulate into batch buffer; dispatch when debounce settles
+        state.batchBuffer.push(queued);
+        if (config.debounceMs > 0) {
+          if (state.debounceTimer) clearTimeout(state.debounceTimer);
+          state.debounceTimer = setTimeout(() => {
+            // Batch will be picked up by drainWaiting after active run finishes
+          }, config.debounceMs);
+        }
+        break;
+      }
+
+      case "followup": {
+        state.pendingMessages.push(queued);
+        break;
+      }
+
+      case "interrupt": {
+        // Abort current run
+        state.abortController?.abort();
+        // The execute() finally block will drain waitingGroups;
+        // re-queue both the interrupted batch and the new message
+        const requeue = [...state.pendingMessages, queued];
+        state.pendingMessages = requeue;
+        break;
+      }
+    }
+  }
+
+  private async execute(groupFolder: string, queued: QueuedMessage) {
     const state = this.getOrCreateState(groupFolder);
+    const config = this.getConfig(groupFolder);
+
     state.active = true;
+    const abort = new AbortController();
+    state.abortController = abort;
     this.activeCount++;
 
     try {
-      await this.processFn?.(groupFolder, message);
-      state.retryCount = 0;
+      await this.processFn?.(groupFolder, queued.text, abort);
     } catch (error) {
-      // Exponential backoff retry
-      if (state.retryCount < 5) {
-        state.retryCount++;
-        const delay = 5000 * Math.pow(2, state.retryCount - 1);
-        setTimeout(() => this.execute(groupFolder, message), delay);
+      if (queued.retryCount < config.maxRetries) {
+        // Retry within the same execution context — sequential, not deferred
+        queued.retryCount++;
+        state.active = false;
+        state.abortController = undefined;
+        this.activeCount--;
+        await this.execute(groupFolder, queued);
         return;
+      } else {
+        // Max retries exceeded — move to dead-letter store
+        await this.writeDeadLetter(groupFolder, queued, String(error));
       }
     } finally {
       state.active = false;
+      state.abortController = undefined;
       this.activeCount--;
+
+      // Drain collect buffer into pending queue
+      if (state.batchBuffer.length > 0) {
+        const batchText = state.batchBuffer.map(m => m.text).join("\n\n---\n\n");
+        state.batchBuffer = [];
+        state.pendingMessages.unshift({
+          text: batchText,
+          timestamp: Date.now(),
+          id: `batch-${Date.now()}`,
+          retryCount: 0
+        });
+      }
+
       this.drainWaiting();
     }
   }
 
   private drainWaiting() {
+    // First, drain pending messages for groups that were already active
+    for (const [groupFolder, state] of this.groups) {
+      if (!state.active && state.pendingMessages.length > 0 &&
+          this.activeCount < this.maxConcurrent) {
+        const next = state.pendingMessages.shift()!;
+        this.execute(groupFolder, next);
+      }
+    }
+
+    // Then, pick up groups that were waiting for capacity
     while (this.waitingGroups.length > 0 && this.activeCount < this.maxConcurrent) {
       const next = this.waitingGroups.shift()!;
       const state = this.groups.get(next);
       if (state?.pendingMessages.length) {
         const msg = state.pendingMessages.shift()!;
-        this.execute(next, msg.text);
+        this.execute(next, msg);
+      }
+    }
+  }
+
+  private async writeDeadLetter(
+    groupFolder: string,
+    message: QueuedMessage,
+    error: string
+  ) {
+    const entry: DeadLetterEntry = {
+      message,
+      groupFolder,
+      error,
+      failedAt: new Date().toISOString()
+    };
+    const filename = `${Date.now()}-${message.id}.json`;
+    await fs.promises.writeFile(
+      `./data/dead-letter/${filename}`,
+      JSON.stringify(entry, null, 2)
+    );
+  }
+
+  /** Graceful shutdown: wait for active runs or abort after timeoutMs. */
+  async shutdown(timeoutMs: number = 10_000): Promise<void> {
+    const deadline = Date.now() + timeoutMs;
+
+    // Wait for all active runs to finish
+    while (this.activeCount > 0 && Date.now() < deadline) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    // Abort any still-running agents
+    if (this.activeCount > 0) {
+      for (const state of this.groups.values()) {
+        state.abortController?.abort();
+      }
+    }
+
+    // Drain remaining pending messages to dead-letter store
+    for (const [groupFolder, state] of this.groups) {
+      for (const msg of [...state.pendingMessages, ...state.batchBuffer]) {
+        await this.writeDeadLetter(groupFolder, msg, "shutdown");
       }
     }
   }
@@ -572,14 +717,36 @@ class GroupQueue {
       this.groups.set(groupFolder, {
         active: false,
         pendingMessages: [],
-        pendingTasks: [],
-        retryCount: 0
+        batchBuffer: []
       });
     }
     return this.groups.get(groupFolder)!;
   }
 }
 ```
+
+### DM Scope: Per-Peer Session Isolation
+
+When a message arrives from a private (direct) chat, use a session ID that encodes
+the peer identifier. This gives each private conversation its own transcript,
+separate from the group's shared session:
+
+```typescript
+function resolveSessionId(
+  groupFolder: string,
+  messageContext: { isDm: boolean; peerId?: string },
+  storedSessionId?: string
+): string | undefined {
+  if (messageContext.isDm && messageContext.peerId) {
+    // Each DM peer gets its own session: "groupFolder:dm:peerId"
+    return `${groupFolder}:dm:${messageContext.peerId}`;
+  }
+  return storedSessionId;
+}
+```
+
+Pass the resolved session ID as `resume` to `query()`. The SDK persists the
+transcript under that ID automatically.
 
 ---
 
@@ -604,7 +771,8 @@ The SDK provides these tools out of the box — no implementation required:
 
 ### Custom MCP Server for IPC
 
-Use `createSdkMcpServer()` and `tool()` to define custom tools:
+Use `createSdkMcpServer()` and `tool()` to define custom tools. The tool handler
+receives `(args, extra: unknown)` — always include the `extra` parameter:
 
 ```typescript
 import { createSdkMcpServer, tool } from "@anthropic-ai/claude-agent-sdk";
@@ -618,7 +786,7 @@ function createAgentMcpServer(groupFolder: string, isMain: boolean) {
       chatId: z.string().describe("Target chat identifier"),
       text: z.string().describe("Message text to send")
     },
-    async ({ chatId, text }) => {
+    async ({ chatId, text }, extra: unknown) => {
       // Authorization: non-main groups can only send to their own chat
       if (!isMain && chatId !== groupFolder) {
         return {
@@ -640,7 +808,7 @@ function createAgentMcpServer(groupFolder: string, isMain: boolean) {
       scheduleValue: z.string().describe("Cron expression, ms interval, or ISO timestamp"),
       targetGroup: z.string().optional().describe("Target group (main only)")
     },
-    async ({ prompt, scheduleType, scheduleValue, targetGroup }) => {
+    async ({ prompt, scheduleType, scheduleValue, targetGroup }, extra: unknown) => {
       const target = isMain ? (targetGroup ?? groupFolder) : groupFolder;
       const taskId = await db.createTask({
         prompt, scheduleType, scheduleValue,
@@ -654,7 +822,7 @@ function createAgentMcpServer(groupFolder: string, isMain: boolean) {
     "list_tasks",
     "List scheduled tasks",
     {},
-    async () => {
+    async (_args, extra: unknown) => {
       const tasks = isMain
         ? await db.getAllTasks()
         : await db.getTasksByGroup(groupFolder);
@@ -668,7 +836,7 @@ function createAgentMcpServer(groupFolder: string, isMain: boolean) {
     "pause_task",
     "Pause a scheduled task",
     { taskId: z.string().describe("Task ID to pause") },
-    async ({ taskId }) => {
+    async ({ taskId }, extra: unknown) => {
       const task = await db.getTask(taskId);
       if (!isMain && task?.groupFolder !== groupFolder) {
         return { content: [{ type: "text", text: "Unauthorized" }], isError: true };
@@ -682,7 +850,7 @@ function createAgentMcpServer(groupFolder: string, isMain: boolean) {
     "resume_task",
     "Resume a paused task",
     { taskId: z.string().describe("Task ID to resume") },
-    async ({ taskId }) => {
+    async ({ taskId }, extra: unknown) => {
       const task = await db.getTask(taskId);
       if (!isMain && task?.groupFolder !== groupFolder) {
         return { content: [{ type: "text", text: "Unauthorized" }], isError: true };
@@ -696,7 +864,7 @@ function createAgentMcpServer(groupFolder: string, isMain: boolean) {
     "cancel_task",
     "Delete a scheduled task",
     { taskId: z.string().describe("Task ID to cancel") },
-    async ({ taskId }) => {
+    async ({ taskId }, extra: unknown) => {
       const task = await db.getTask(taskId);
       if (!isMain && task?.groupFolder !== groupFolder) {
         return { content: [{ type: "text", text: "Unauthorized" }], isError: true };
@@ -746,7 +914,10 @@ const options = {
 
 ### Programmatic Subagents (AgentDefinition)
 
-Define specialized agents that the main agent can invoke via the `Task` tool:
+Define specialized agents that the main agent can invoke via the `Task` tool.
+Note that `AgentDefinition.model` accepts **aliases** (`"sonnet"`, `"opus"`,
+`"haiku"`, `"inherit"`), not full model IDs. Full model IDs are only used in
+the top-level `options.model`:
 
 ```typescript
 const agents: Record<string, AgentDefinition> = {
@@ -755,7 +926,7 @@ const agents: Record<string, AgentDefinition> = {
     prompt: `You are a research specialist. Search the web, read files, and
              synthesize findings into clear summaries. Never modify files.`,
     tools: ["WebSearch", "WebFetch", "Read", "Glob", "Grep"],
-    model: "haiku"  // Fast, cheap model for research
+    model: "haiku"      // alias — fast, cheap model for research
   },
 
   coder: {
@@ -763,7 +934,7 @@ const agents: Record<string, AgentDefinition> = {
     prompt: `You are an expert software engineer. Write clean, well-tested code.
              Follow existing project conventions. Run tests after changes.`,
     tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"],
-    model: "sonnet"  // Balanced model for coding
+    model: "sonnet"     // alias — balanced model for coding
   },
 
   reviewer: {
@@ -771,25 +942,18 @@ const agents: Record<string, AgentDefinition> = {
     prompt: `You are a senior code reviewer. Analyze code for bugs, security
              vulnerabilities, and style issues. Never modify files directly.`,
     tools: ["Read", "Glob", "Grep"],
-    model: "opus"  // Most capable model for deep analysis
-  },
-
-  planner: {
-    description: "Planning agent for breaking down complex tasks",
-    prompt: `You are a software architect. Break complex tasks into clear,
-             actionable steps. Consider dependencies and risks.`,
-    tools: ["Read", "Glob", "Grep", "WebSearch"],
-    model: "sonnet"
+    model: "opus"       // alias — most capable model for deep analysis
   }
 };
 ```
 
 ### Orchestration Patterns with Subagents
 
-The main agent uses the `Task` tool to delegate. Include `Task` in `allowedTools`:
+The main agent uses the `Task` tool to delegate. Subagent completion is handled by
+consuming the subagent's own `query()` stream to completion — the SDK manages this
+internally when the `Task` tool is invoked. Include `Task` in `allowedTools`:
 
 ```typescript
-// Supervisor pattern — main agent delegates to specialists
 const q = query({
   prompt: `You are a tech lead. Break this task into subtasks and delegate:
            "${userRequest}"
@@ -803,24 +967,6 @@ const q = query({
   }
 });
 ```
-
-### Background Subagents
-
-Subagents can run in the background. The SDK emits `task_notification` messages
-when they complete:
-
-```typescript
-for await (const msg of q) {
-  if (msg.type === "system" && msg.subtype === "task_notification") {
-    // Background agent completed
-    console.log(`Subagent finished: ${msg.agent_id}`);
-  }
-}
-```
-
-**Important**: For background subagents to work correctly, the prompt must be
-an `AsyncIterable` (not a static string). A string prompt sets
-`isSingleUserTurn = true`, which kills subagents after the first result.
 
 ---
 
@@ -865,8 +1011,8 @@ function buildHooks(groupFolder: string, isMain: boolean = false) {
     ] as HookCallbackMatcher[],
 
     Stop: [
-      // Save state on agent stop
-      { hooks: [saveSessionState(groupFolder)] }
+      // Example: conditionally resume the agent
+      { hooks: [conditionalResume(groupFolder)] }
     ] as HookCallbackMatcher[],
 
     SubagentStop: [
@@ -897,7 +1043,8 @@ const blockDangerousCommands: HookCallback = async (input, _toolUseID, { signal 
     if (pattern.test(command)) {
       return {
         hookSpecificOutput: {
-          hookEventName: input.hook_event_name,
+          // Use a string literal for type safety — not input.hook_event_name
+          hookEventName: "PreToolUse" as const,
           permissionDecision: "deny",
           permissionDecisionReason: `Blocked dangerous command: ${command.slice(0, 80)}`
         }
@@ -906,6 +1053,28 @@ const blockDangerousCommands: HookCallback = async (input, _toolUseID, { signal 
   }
   return {};
 };
+```
+
+### Stop Hook: Conditional Resume
+
+The Stop hook fires when the agent reaches a natural stopping point. Return
+`{ continue: true }` to resume the agent (override the stop); return `{}` or
+`{ continue: false }` to allow it to stop normally. Do not use the Stop hook
+to save session state — the SDK persists transcripts automatically.
+
+```typescript
+function conditionalResume(groupFolder: string): HookCallback {
+  return async (input, _toolUseID, { signal }) => {
+    // Check if there's follow-up work pending
+    const hasPendingWork = await checkPendingWork(groupFolder);
+    if (hasPendingWork) {
+      // Resume the agent with additional context
+      return { continue: true };
+    }
+    // Allow normal stop
+    return {};
+  };
+}
 ```
 
 ### Audit Hook: Log All Tool Calls
@@ -940,7 +1109,6 @@ function archiveTranscript(groupFolder: string): HookCallback {
     const transcriptPath = input.transcript_path;
     const archivePath = `./groups/${groupFolder}/conversations/${Date.now()}.md`;
 
-    // Read JSONL transcript, convert to markdown
     const content = await fs.promises.readFile(transcriptPath, "utf-8");
     const lines = content.trim().split("\n").map(l => JSON.parse(l));
     const markdown = lines
@@ -958,8 +1126,7 @@ function archiveTranscript(groupFolder: string): HookCallback {
 
 ## 10. Input Sources & Autonomy
 
-Implement the five input types from the design doc. All feed into the same
-`GroupQueue.enqueue()` → `runAgent()` pipeline.
+All five input types feed into `GroupQueue.enqueue()` → `runAgent()`.
 
 ### Message Loop (Polling)
 
@@ -979,7 +1146,16 @@ async function startMessageLoop(
         // Trigger pattern check (non-main groups)
         if (!group.isMain && !TRIGGER_PATTERN.test(msg.text)) continue;
 
-        await queue.enqueue(group.folder, formatMessage(msg));
+        // Dedup key prevents reprocessing on polling overlap
+        const dedupKey = `${channel.name}:${msg.messageId}`;
+
+        // Resolve session ID — per-peer for DMs
+        const sessionId = resolveSessionId(group.folder, {
+          isDm: msg.isDm,
+          peerId: msg.peerId
+        }, group.sessionId);
+
+        await queue.enqueue(group.folder, formatMessage(msg), dedupKey);
       }
     }
     await sleep(pollInterval);
@@ -994,14 +1170,11 @@ import { CronExpressionParser } from "cron-parser";
 
 async function startSchedulerLoop(queue: GroupQueue, pollInterval: number = 60_000) {
   while (!shuttingDown) {
-    // getDueTasks() returns tasks where status = "active" and nextRun <= now.
-    // Tasks with status "paused" or "completed" are excluded.
     const dueTasks = await db.getDueTasks();
 
     for (const task of dueTasks) {
-      await queue.enqueueTask(task.groupFolder, task.prompt, task.id);
+      await queue.enqueue(task.groupFolder, task.prompt);
 
-      // Schedule next run
       if (task.scheduleType === "cron") {
         const interval = CronExpressionParser.parse(task.scheduleValue);
         await db.updateNextRun(task.id, interval.next().toISOString());
@@ -1024,10 +1197,10 @@ async function startSchedulerLoop(queue: GroupQueue, pollInterval: number = 60_0
 async function startHeartbeatLoop(
   queue: GroupQueue,
   registeredGroups: Map<string, Group>,
-  intervalMs: number = 30 * 60 * 1000  // 30 minutes
+  intervalMs: number = 30 * 60 * 1000
 ) {
   while (!shuttingDown) {
-    for (const [folder, group] of registeredGroups) {
+    for (const [folder] of registeredGroups) {
       await queue.enqueue(folder,
         "HEARTBEAT: Check if there is any pending work or proactive action needed. " +
         "If nothing needs attention, respond with HEARTBEAT_OK."
@@ -1040,16 +1213,35 @@ async function startHeartbeatLoop(
 
 ### Webhook Endpoint
 
+The webhook server verifies HMAC signatures before enqueuing. Each group has its
+own webhook secret configured in the database:
+
 ```typescript
 import { createServer } from "http";
+import { createHmac, timingSafeEqual } from "crypto";
 
 function startWebhookServer(queue: GroupQueue, port: number = 3000) {
   const server = createServer(async (req, res) => {
     if (req.method === "POST" && req.url?.startsWith("/webhook/")) {
       const groupFolder = req.url.split("/webhook/")[1];
       const body = await readBody(req);
-      const payload = JSON.parse(body);
 
+      // HMAC signature verification
+      const secret = await db.getWebhookSecret(groupFolder);
+      if (secret) {
+        const signature = req.headers["x-webhook-signature"] as string;
+        const expected = createHmac("sha256", secret).update(body).digest("hex");
+        const expectedBuf = Buffer.from(`sha256=${expected}`);
+        const actualBuf = Buffer.from(signature ?? "");
+        if (actualBuf.length !== expectedBuf.length ||
+            !timingSafeEqual(actualBuf, expectedBuf)) {
+          res.writeHead(401);
+          res.end("Invalid signature");
+          return;
+        }
+      }
+
+      const payload = JSON.parse(body);
       await queue.enqueue(groupFolder,
         `WEBHOOK received: ${JSON.stringify(payload)}`
       );
@@ -1063,13 +1255,41 @@ function startWebhookServer(queue: GroupQueue, port: number = 3000) {
 }
 ```
 
+### Rate Limit Handling
+
+The SDK handles 429 retries internally with backoff. At the orchestrator level:
+- Set `maxConcurrent` below the API's concurrent request limit to avoid saturating
+  the rate limit in the first place.
+- Track cumulative cost from `cost_usd` fields in `SDKResultMessage` to enforce
+  a budget cap at the application layer before the SDK's `maxBudgetUsd` kicks in.
+
+```typescript
+let cumulativeCostUsd = 0;
+const BUDGET_CAP_USD = 50.0;
+
+// In your result message handler:
+if (msg.type === "result") {
+  cumulativeCostUsd += msg.total_cost_usd;
+  if (cumulativeCostUsd > BUDGET_CAP_USD) {
+    logger.warn("Global budget cap reached — pausing new dispatches");
+    queue.pause();
+  }
+}
+```
+
 ---
 
-## 11. Container Isolation
+## 11. Container Isolation (Optional)
 
-For production deployments, run each agent invocation inside an ephemeral container.
+This section describes an optional hardened execution mode. The default and primary
+model is in-process `query()` as shown in Section 3. Use container isolation when
+you need strong OS-level isolation between agent invocations (e.g., multi-tenant
+production deployments).
 
 ### Container Runner
+
+The orchestrator spawns a container per agent invocation. The container runs a
+minimal agent runner that invokes the SDK, then exits.
 
 ```typescript
 import { spawn } from "child_process";
@@ -1080,6 +1300,7 @@ interface ContainerConfig {
   prompt: string;
   sessionId?: string;
   secrets: Record<string, string>;
+  timeoutMs?: number;
 }
 
 async function runContainerAgent(config: ContainerConfig): Promise<AgentResult> {
@@ -1096,26 +1317,36 @@ async function runContainerAgent(config: ContainerConfig): Promise<AgentResult> 
 
   const proc = spawn("docker", args, { stdio: ["pipe", "pipe", "pipe"] });
 
-  // Inject secrets via stdin (never written to disk)
+  // Container timeout
+  const timeoutMs = config.timeoutMs ?? 300_000;  // 5 minutes default
+  const timer = setTimeout(() => {
+    proc.kill("SIGKILL");
+  }, timeoutMs);
+
   const input = {
     prompt: config.prompt,
     sessionId: config.sessionId,
     groupFolder: config.groupFolder,
     isMain: config.isMain,
-    secrets: config.secrets  // Stripped inside container after SDK init
+    secrets: config.secrets
   };
   proc.stdin.write(JSON.stringify(input));
   proc.stdin.end();
 
-  // Parse marker-delimited output
-  return parseContainerOutput(proc.stdout);
+  try {
+    return await parseContainerOutput(proc.stdout);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function buildMounts(config: ContainerConfig) {
   const mounts = [
-    { host: `./groups/${config.groupFolder}`,    container: "/workspace/group",   mode: "rw" },
-    { host: "./groups/global",                    container: "/workspace/global",  mode: "ro" },
-    { host: `./data/ipc/${config.groupFolder}`,  container: "/workspace/ipc",     mode: "rw" },
+    { host: `./groups/${config.groupFolder}`,   container: "/workspace/group",  mode: "rw" },
+    { host: "./groups/global",                   container: "/workspace/global", mode: "ro" },
+    { host: `./data/ipc/${config.groupFolder}`, container: "/workspace/ipc",    mode: "rw" },
+    // Mount .claude/ into container cwd so settingSources: ["project"] finds settings
+    { host: `./.claude`,                         container: "/workspace/.claude", mode: "ro" },
     { host: `./data/sessions/${config.groupFolder}/.claude`,
       container: "/home/node/.claude", mode: "rw" }
   ];
@@ -1124,21 +1355,11 @@ function buildMounts(config: ContainerConfig) {
     mounts.push({ host: ".", container: "/workspace/project", mode: "ro" });
   }
 
-  // Add validated extra mounts from external allowlist
-  const extras = loadMountAllowlist();
-  for (const extra of extras) {
-    if (validateMount(extra, config.isMain)) {
-      mounts.push(extra);
-    }
-  }
-
   return mounts;
 }
 ```
 
 ### In-Container Agent Runner
-
-Inside the container, the agent runner reads from stdin and invokes the SDK:
 
 ```typescript
 // container/agent-runner/src/index.ts
@@ -1147,11 +1368,8 @@ import { query } from "@anthropic-ai/claude-agent-sdk";
 const input = JSON.parse(await readStdin());
 const { prompt, sessionId, secrets, groupFolder, isMain } = input;
 
-// Set secrets in SDK env only (not process.env)
 const sdkEnv = { ...process.env };
 if (secrets.ANTHROPIC_API_KEY) sdkEnv.ANTHROPIC_API_KEY = secrets.ANTHROPIC_API_KEY;
-
-// Strip secrets from subprocess environments
 delete process.env.ANTHROPIC_API_KEY;
 
 const q = query({
@@ -1160,6 +1378,8 @@ const q = query({
     resume: sessionId,
     cwd: "/workspace/group",
     env: sdkEnv,
+    // settingSources: ["project"] will look for /workspace/group/.claude/settings.json
+    // which is satisfied by the .claude/ mount in buildMounts()
     settingSources: ["project"],
     systemPrompt: { type: "preset", preset: "claude_code" },
     permissionMode: "bypassPermissions",
@@ -1178,7 +1398,6 @@ const q = query({
 
 for await (const msg of q) {
   if (msg.type === "result") {
-    // Write output using sentinel markers
     process.stdout.write("---OUTPUT_START---\n");
     process.stdout.write(JSON.stringify({
       status: msg.subtype === "success" ? "success" : "error",
@@ -1206,8 +1425,7 @@ data/ipc/{groupFolder}/
 ├── tasks/             # Agent → Host: schedule/manage tasks
 │   └── {timestamp}-{random}.json
 ├── input/             # Host → Agent: follow-up messages
-│   ├── {timestamp}-{random}.json
-│   └── _close         # Sentinel: signal shutdown
+│   └── {timestamp}-{random}.json
 └── errors/            # Failed IPC files
 ```
 
@@ -1223,13 +1441,11 @@ async function startIpcWatcher(
     for (const [folder, group] of registeredGroups) {
       const ipcDir = `./data/ipc/${folder}`;
 
-      // Process outbound messages
       const msgFiles = await glob(`${ipcDir}/messages/*.json`);
       for (const file of msgFiles) {
         try {
           const data = JSON.parse(await fs.promises.readFile(file, "utf-8"));
 
-          // Authorization check
           if (!group.isMain && data.chatId !== group.chatJid) {
             throw new Error("Unauthorized: non-main group sending to foreign chat");
           }
@@ -1237,12 +1453,10 @@ async function startIpcWatcher(
           await sendMessage(data.chatId, data.text);
           await fs.promises.unlink(file);
         } catch (error) {
-          // Move to errors directory
           await moveToErrors(file, folder);
         }
       }
 
-      // Process task requests
       const taskFiles = await glob(`${ipcDir}/tasks/*.json`);
       for (const file of taskFiles) {
         try {
@@ -1279,8 +1493,6 @@ async function writeIpcFile(dir: string, data: object): Promise<void> {
 
 ### Risk Levels
 
-The system uses a 5-level risk scale, consistent across all documents:
-
 | Level | Tools | Default Behavior |
 |-------|-------|-----------------|
 | `low` | Read, Glob, Grep, WebSearch, TodoWrite | Auto-allow |
@@ -1300,49 +1512,25 @@ The system uses a 5-level risk scale, consistent across all documents:
 
 ### canUseTool Handler
 
-For fine-grained permission control without bypassing all checks:
-
 ```typescript
 const canUseTool: CanUseTool = async (toolName, input, { signal, suggestions }) => {
-  // Always allow read-only tools
   if (["Read", "Glob", "Grep", "WebSearch"].includes(toolName)) {
     return { behavior: "allow", updatedInput: input };
   }
 
-  // Block writes outside workspace
   if (["Write", "Edit"].includes(toolName)) {
     const filePath = (input as any).file_path as string;
     if (!filePath.startsWith("/workspace/")) {
-      return {
-        behavior: "deny",
-        message: "Cannot write outside workspace"
-      };
+      return { behavior: "deny", message: "Cannot write outside workspace" };
     }
     return { behavior: "allow", updatedInput: input };
   }
 
-  // Bash: allow only if sandboxed
   if (toolName === "Bash") {
     return { behavior: "allow", updatedInput: input };
   }
 
-  // Default: deny unknown tools
   return { behavior: "deny", message: `Unknown tool: ${toolName}` };
-};
-```
-
-### Sandbox Configuration
-
-```typescript
-const sandbox: SandboxSettings = {
-  enabled: true,
-  autoAllowBashIfSandboxed: true,
-  excludedCommands: ["docker"],  // Allow docker commands outside sandbox
-  allowUnsandboxedCommands: false,  // Don't let the model escape sandbox
-  network: {
-    allowLocalBinding: true,  // Allow dev servers
-    allowUnixSockets: []      // No Unix socket access
-  }
 };
 ```
 
@@ -1354,12 +1542,11 @@ function createSanitizeBashHook(secretVarNames: string[]): HookCallback {
     const preInput = input as PreToolUseHookInput;
     const command = preInput.tool_input?.command as string;
 
-    // Check if command tries to read secret env vars
     for (const varName of secretVarNames) {
       if (command.includes(`$${varName}`) || command.includes(`\${${varName}}`)) {
         return {
           hookSpecificOutput: {
-            hookEventName: input.hook_event_name,
+            hookEventName: "PreToolUse" as const,
             permissionDecision: "deny",
             permissionDecisionReason: `Cannot access secret: ${varName}`
           }
@@ -1388,7 +1575,6 @@ async function processGroupMessages(
 
   if (messages.length === 0) return;
 
-  // Advance cursor optimistically
   const newCursor = messages[messages.length - 1].timestamp;
   await db.setAgentCursor(groupFolder, newCursor);
 
@@ -1408,10 +1594,8 @@ async function processGroupMessages(
     await db.setSessionId(groupFolder, result.sessionId);
   } catch (error) {
     if (!outputSentToUser) {
-      // Safe to roll back — user hasn't seen anything
       await db.setAgentCursor(groupFolder, previousCursor);
     }
-    // If output was sent, cursor stays advanced to prevent duplicates
     throw error;
   }
 }
@@ -1431,22 +1615,6 @@ async function recoverPendingMessages(queue: GroupQueue) {
       console.log(`Recovering ${pending.length} messages for ${group.folder}`);
       await queue.enqueue(group.folder, formatMessages(pending));
     }
-  }
-}
-```
-
-### Orphan Container Cleanup
-
-```typescript
-async function cleanupOrphans() {
-  const { stdout } = await exec(
-    'docker ps --filter "name=agent-" --format "{{.Names}}"'
-  );
-  const containers = stdout.trim().split("\n").filter(Boolean);
-
-  for (const name of containers) {
-    console.log(`Stopping orphan container: ${name}`);
-    await exec(`docker stop ${name}`).catch(() => {});
   }
 }
 ```
@@ -1515,13 +1683,15 @@ interface AgentMetrics {
   avgTurnsToCompletion: number;     // num_turns across sessions
   avgCostPerTask: number;           // total_cost_usd across sessions
   toolCallSuccessRate: number;      // PostToolUse / (PostToolUse + PostToolUseFailure)
-  containerUtilization: number;     // active time / total time
   errorRateByCategory: {
     maxTurns: number;
     maxBudget: number;
     execution: number;
+    structuredOutputRetries: number;
     timeout: number;
   };
+  deadLetterCount: number;          // messages that exceeded max retries
+  cumulativeCostUsd: number;        // global budget tracking
 }
 ```
 
@@ -1563,8 +1733,12 @@ const q = query({
 });
 
 for await (const msg of q) {
-  if (msg.type === "result" && msg.subtype === "success") {
-    const report = msg.structured_output as CodeAnalysisReport;
+  if (msg.type === "result") {
+    if (msg.subtype === "success") {
+      const report = msg.structured_output as CodeAnalysisReport;
+    } else if (msg.subtype === "error_max_structured_output_retries") {
+      logger.error("Structured output schema validation failed after max retries");
+    }
   }
 }
 ```
@@ -1582,27 +1756,34 @@ import { startMessageLoop } from "./message-loop";
 import { startSchedulerLoop } from "./scheduler";
 import { startIpcWatcher } from "./ipc";
 import { startWebhookServer } from "./webhooks";
-import { cleanupOrphans } from "./container-runtime";
 import { initDatabase } from "./db";
 import { recoverPendingMessages } from "./recovery";
 
 async function main() {
   // 1. Initialize
-  await cleanupOrphans();
   const db = await initDatabase();
   const registeredGroups = await db.loadRegisteredGroups();
-  const channels = await initChannels();  // WhatsApp, Telegram, etc.
+  const channels = await initChannels();
 
   // 2. Set up queue
   //    Per-group config (model, maxTurns, budget, tools, timeout, queueMode,
-  //    mcpServers, additionalMounts) is loaded from the database and mapped
-  //    to SDK query() options + container settings by runAgent(). The frontend
-  //    management console (FRONTEND_DESIGN.md) writes this config via the
-  //    REST API at PUT /api/agents/:folder.
+  //    debounceMs, mcpServers) is loaded from the database and mapped
+  //    to SDK query() options by runAgent(). The frontend management console
+  //    (FRONTEND_DESIGN.md) writes this config via PUT /api/agents/:folder.
   const queue = new GroupQueue(parseInt(process.env.MAX_CONCURRENT ?? "5"));
-  queue.setProcessFn(async (groupFolder, message) => {
+
+  // Load per-group queue configs from DB
+  for (const [folder, group] of registeredGroups) {
+    queue.setGroupConfig(folder, {
+      queueMode: group.queueMode ?? "followup",
+      debounceMs: group.debounceMs ?? 0,
+      maxRetries: group.maxRetries ?? 3
+    });
+  }
+
+  queue.setProcessFn(async (groupFolder, message, abort) => {
     const group = registeredGroups.get(groupFolder)!;
-    const result = await runAgent(message, groupFolder, group.sessionId);
+    const result = await runAgent(message, groupFolder, group.sessionId, abort);
     if (result.text) {
       await routeOutbound(group.chatJid, result.text);
     }
@@ -1689,8 +1870,9 @@ import {
 
 | Option | Type | Key Detail |
 |--------|------|------------|
-| `prompt` | `string \| AsyncIterable<SDKUserMessage>` | String = single-turn; AsyncIterable = multi-turn |
-| `model` | `string` | `"claude-opus-4-6"`, `"claude-sonnet-4-6"`, `"claude-haiku-4-5-20251001"` |
+| `prompt` | `string` | The user message for this turn |
+| `resume` | `string` | Session ID to resume (enables multi-turn via V1) |
+| `model` | `string` | Full model ID: `"claude-opus-4-6"`, `"claude-sonnet-4-6"`, `"claude-haiku-4-5-20251001"` |
 | `maxTurns` | `number` | Loop iteration cap |
 | `maxBudgetUsd` | `number` | Cost cap in USD |
 | `allowedTools` | `string[]` | Whitelist of tool names |
@@ -1703,12 +1885,20 @@ import {
 | `systemPrompt` | `string \| { type: "preset", preset: "claude_code", append?: string }` | System instructions |
 | `settingSources` | `SettingSource[]` | `["project"]` to load CLAUDE.md |
 | `cwd` | `string` | Working directory |
-| `resume` | `string` | Session ID to resume |
 | `sandbox` | `SandboxSettings` | Bash sandboxing config |
 | `outputFormat` | `{ type: "json_schema", schema: JSONSchema }` | Structured output |
 | `betas` | `SdkBeta[]` | `["context-1m-2025-08-07"]` for 1M context |
 | `abortController` | `AbortController` | Cancellation |
 | `env` | `Dict<string>` | Environment variables |
+
+### AgentDefinition Fields
+
+| Field | Type | Key Detail |
+|-------|------|------------|
+| `description` | `string` | Shown to orchestrator agent when selecting |
+| `prompt` | `string` | Subagent system prompt |
+| `tools` | `string[]` | Allowed tools for this subagent |
+| `model` | `string` | **Alias only**: `"sonnet"`, `"opus"`, `"haiku"`, `"inherit"` |
 
 ### SDKMessage Types
 
@@ -1717,21 +1907,22 @@ import {
 | `system` | `init` | Session started — contains session_id, tools, model |
 | `system` | `compact_boundary` | Transcript compacted |
 | `assistant` | — | Claude's response (text + tool_use blocks) |
-| `user` | — | Internal user message |
+| `user` | — | Internal user message (output type, not input) |
 | `result` | `success` | Agent completed — contains result, cost, usage |
 | `result` | `error_max_turns` | Hit maxTurns limit |
 | `result` | `error_max_budget_usd` | Hit cost limit |
 | `result` | `error_during_execution` | Runtime error |
+| `result` | `error_max_structured_output_retries` | JSON schema validation failed after retries |
 | `stream_event` | — | Partial streaming (if `includePartialMessages: true`) |
 
 ### Hook Events
 
-| Event | Trigger | Can Block? |
-|-------|---------|------------|
-| `PreToolUse` | Before tool execution | Yes — `permissionDecision: "deny"` |
+| Event | Trigger | Can Affect Execution? |
+|-------|---------|----------------------|
+| `PreToolUse` | Before tool execution | Yes — `permissionDecision: "deny"` blocks the tool |
 | `PostToolUse` | After tool execution | No |
 | `PostToolUseFailure` | Tool failed | No |
-| `Stop` | Agent stopping | Yes — `{ continue: false }` |
+| `Stop` | Agent stopping naturally | Yes — `{ continue: true }` resumes the agent |
 | `SessionStart` | Session initialized | No |
 | `SessionEnd` | Session terminated | No |
 | `SubagentStart` | Subagent spawned | No |
@@ -1743,5 +1934,5 @@ import {
 
 ---
 
-*Document generated 2026-02-25. Based on `@anthropic-ai/claude-agent-sdk` v0.2.x.
+*Document updated 2026-02-25. Based on `@anthropic-ai/claude-agent-sdk` v0.2.x.
 Update as the SDK evolves — especially the V2 API when it stabilizes.*
