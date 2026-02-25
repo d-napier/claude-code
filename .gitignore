@@ -1,1 +1,8 @@
 .worktrees/
+node_modules/
+dist/
+.env
+data/
+*.db
+frontend/.next/
+frontend/node_modules/
