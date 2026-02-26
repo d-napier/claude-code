@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   Brain,
   Settings,
+  Plug,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -40,6 +41,7 @@ const navItems: NavItem[] = [
         .length,
   },
   { label: "Memory", href: "/memory", icon: Brain },
+  { label: "Integrations", href: "/integrations", icon: Plug },
   { label: "Settings", href: "/settings", icon: Settings },
 ];
 
