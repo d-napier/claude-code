@@ -19,5 +19,20 @@ const envSchema = z.object({
   LOG_LEVEL: z.string().default("info"),
 });
 
-export const config = envSchema.parse(process.env);
-export type Config = typeof config;
+let _config: z.infer<typeof envSchema> | undefined;
+
+export function getConfig(): z.infer<typeof envSchema> {
+  if (!_config) {
+    _config = envSchema.parse(process.env);
+  }
+  return _config;
+}
+
+// Lazy getter — only parses when first accessed
+export const config = new Proxy({} as z.infer<typeof envSchema>, {
+  get(_target, prop: string) {
+    return getConfig()[prop as keyof z.infer<typeof envSchema>];
+  },
+});
+
+export type Config = z.infer<typeof envSchema>;
