@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Read", "Write", "Edit", "Glob", "Grep",
+      "Bash(npm:*)", "Bash(npx:*)", "Bash(node:*)",
+      "Bash(git:*)", "Bash(ls:*)", "Bash(mkdir:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /)*",
+      "Bash(curl:*)|Bash(wget:*)"
+    ]
+  }
+}
