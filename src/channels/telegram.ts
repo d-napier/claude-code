@@ -1,4 +1,4 @@
-import { Channel, ChannelMessage } from "./types";
+import { Channel, ChannelMessage } from "./types.js";
 
 export function connect(config: Record<string, string>): Channel {
   console.log("[telegram] connecting with config:", Object.keys(config).join(", "));
