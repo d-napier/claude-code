@@ -9,8 +9,11 @@ import { startIpcWatcher } from "./ipc.js";
 import { startWebhookServer } from "./webhooks.js";
 import { buildHooks } from "./hooks/index.js";
 import { createAgentMcpServer, setDb } from "./tools/mcp-server.js";
+import { createApiServer } from "./api/server.js";
+import { createWsServer } from "./api/ws-server.js";
 import { config } from "./config.js";
 import pino from "pino";
+import type { Server } from "http";
 
 const logger = pino({ level: config.LOG_LEVEL });
 
@@ -18,6 +21,7 @@ let db: Database;
 let queue: GroupQueue;
 let ipcWatcher: { stop: () => void } | undefined;
 let webhookServer: ReturnType<typeof startWebhookServer> | undefined;
+let apiServer: Server | undefined;
 
 async function main() {
   logger.info("Starting Claude Claw orchestrator...");
@@ -93,6 +97,14 @@ async function main() {
   webhookServer = startWebhookServer(queue, db, config.WEBHOOK_PORT);
   logger.info({ port: config.WEBHOOK_PORT }, "Webhook server started");
 
+  // API server + WebSocket
+  const apiApp = createApiServer(db, queue);
+  apiServer = apiApp.listen(config.API_PORT, () => {
+    logger.info({ port: config.API_PORT }, "API server started");
+  });
+  createWsServer(apiServer);
+  logger.info("WebSocket server attached to API server");
+
   // IPC watcher
   ipcWatcher = startIpcWatcher(queue, db, groupFolders);
   logger.info("IPC watcher started");
@@ -128,6 +140,13 @@ async function shutdown(signal: string) {
   if (webhookServer) {
     await new Promise<void>((resolve) => {
       webhookServer!.close(() => resolve());
+    });
+  }
+
+  // Close API server
+  if (apiServer) {
+    await new Promise<void>((resolve) => {
+      apiServer!.close(() => resolve());
     });
   }
 
