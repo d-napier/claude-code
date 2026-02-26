@@ -1,6 +1,9 @@
 import { query, type SDKMessage } from "@anthropic-ai/claude-agent-sdk";
+import pino from "pino";
 import { config } from "./config.js";
 import type { AgentResult } from "./types.js";
+
+const logger = pino({ name: "agent-runner" });
 
 export async function runAgent(
   prompt: string,
@@ -20,6 +23,8 @@ export async function runAgent(
     mcpServers?: Record<string, any>;
   } = {}
 ): Promise<AgentResult> {
+  logger.info({ groupFolder, hasSession: !!options.sessionId }, "Starting agent run");
+
   const q = query({
     prompt,
     options: {
@@ -77,10 +82,13 @@ export async function runAgent(
           result.text = `Error: ${msg.subtype} — ${msg.errors?.join(", ") ?? "unknown"}`;
           result.status = "error";
           result.errorSubtype = msg.subtype;
+          logger.error({ groupFolder, subtype: msg.subtype }, "Agent run failed");
         }
         break;
     }
   }
+
+  logger.info({ groupFolder, status: result.status, cost: result.cost }, "Agent run completed");
 
   return result;
 }
