@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { useAppStore } from "@/lib/store";
 import type { ApprovalState, RiskLevel } from "@/lib/types";
 import { ShieldAlert, ShieldCheck, ShieldX, Clock, Eye } from "lucide-react";
 
@@ -74,10 +75,12 @@ export function ApprovalCard({ approval, onApprove, onDeny }: ApprovalCardProps)
     "pending" | "approved" | "denied" | null
   >(null);
 
+  const canWrite = useAppStore((s) => s.canWrite);
   const countdown = useCountdown(approval.expiresAt);
   const isExpired = countdown === "Expired";
   const isPending = approval.status === "pending" && !optimisticStatus;
   const displayStatus = optimisticStatus ?? approval.status;
+  const showActions = isPending && !isExpired && canWrite();
 
   const handleApprove = useCallback(() => {
     setOptimisticStatus("approved");
@@ -133,7 +136,7 @@ export function ApprovalCard({ approval, onApprove, onDeny }: ApprovalCardProps)
         {/* Actions row */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            {isPending && !isExpired ? (
+            {showActions ? (
               <>
                 <Button size="sm" onClick={handleApprove}>
                   <ShieldCheck className="mr-1.5 h-3.5 w-3.5" />

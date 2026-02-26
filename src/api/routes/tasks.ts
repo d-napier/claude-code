@@ -3,6 +3,7 @@
  */
 import { Router } from "express";
 import type { Database } from "../../db.js";
+import { requireWriteAccess } from "../middleware/auth.js";
 
 export function taskRoutes(db: Database): Router {
   const router = Router();
@@ -17,7 +18,7 @@ export function taskRoutes(db: Database): Router {
   });
 
   // POST /api/tasks — create task
-  router.post("/", (req, res) => {
+  router.post("/", requireWriteAccess, (req, res) => {
     const { prompt, scheduleType, scheduleValue, groupFolder, status, nextRun } = req.body;
 
     if (!prompt || !scheduleType || !scheduleValue || !groupFolder) {
@@ -39,7 +40,7 @@ export function taskRoutes(db: Database): Router {
   });
 
   // PUT /api/tasks/:id — update task
-  router.put("/:id", (req, res) => {
+  router.put("/:id", requireWriteAccess, (req, res) => {
     const existing = db.getTask(req.params.id);
     if (!existing) {
       res.status(404).json({ error: "Task not found" });
@@ -59,7 +60,7 @@ export function taskRoutes(db: Database): Router {
   });
 
   // DELETE /api/tasks/:id — delete task
-  router.delete("/:id", (req, res) => {
+  router.delete("/:id", requireWriteAccess, (req, res) => {
     const existing = db.getTask(req.params.id);
     if (!existing) {
       res.status(404).json({ error: "Task not found" });

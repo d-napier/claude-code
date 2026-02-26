@@ -1,6 +1,10 @@
 // Frontend type definitions
 // All interfaces use `folder` as the canonical agent identifier.
 
+// --- RBAC ---
+
+export type UserRole = "admin" | "operator" | "viewer";
+
 // --- Agent ---
 
 export type AgentStatus = "idle" | "running" | "error" | "queued";

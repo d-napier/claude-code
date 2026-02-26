@@ -23,7 +23,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Save, RotateCcw, UserPlus, AlertTriangle } from "lucide-react";
+import { Save, RotateCcw, UserPlus, AlertTriangle, Lock } from "lucide-react";
+import { useAppStore } from "@/lib/store";
 
 interface GeneralSettings {
   assistantName: string;
@@ -64,8 +65,20 @@ const placeholderUsers: User[] = [
 ];
 
 export default function SettingsPage() {
+  const isAdmin = useAppStore((s) => s.isAdmin);
+  const canWrite = useAppStore((s) => s.canWrite);
   const [settings, setSettings] = useState<GeneralSettings>(defaultSettings);
   const [isDirty, setIsDirty] = useState(false);
+
+  if (!canWrite()) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 py-20 text-muted-foreground">
+        <Lock className="h-8 w-8" />
+        <p className="text-lg font-medium">Read-Only Access</p>
+        <p className="text-sm">Settings require operator or admin role.</p>
+      </div>
+    );
+  }
 
   function updateSetting<K extends keyof GeneralSettings>(
     key: K,
@@ -99,7 +112,7 @@ export default function SettingsPage() {
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="environment">Environment</TabsTrigger>
-          <TabsTrigger value="danger">Danger Zone</TabsTrigger>
+          {isAdmin() && <TabsTrigger value="danger">Danger Zone</TabsTrigger>}
         </TabsList>
 
         {/* General Settings */}
@@ -417,8 +430,8 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        {/* Danger Zone */}
-        <TabsContent value="danger" className="space-y-4">
+        {/* Danger Zone — admin only */}
+        {isAdmin() && <TabsContent value="danger" className="space-y-4">
           <Card className="border-red-500/30">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base text-red-600">
@@ -467,7 +480,7 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        </TabsContent>}
       </Tabs>
     </div>
   );

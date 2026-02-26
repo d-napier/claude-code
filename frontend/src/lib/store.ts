@@ -14,11 +14,18 @@ import type {
   TaskCompletedEvent,
   StateSnapshot,
   ServerEvent,
+  UserRole,
 } from "./types";
 
 const MAX_OUTPUT_LINES = 500;
 
 export interface AppStore {
+  // User role
+  userRole: UserRole;
+  setUserRole: (role: UserRole) => void;
+  canWrite: () => boolean;
+  isAdmin: () => boolean;
+
   // Connection status
   wsStatus: "connecting" | "open" | "closed";
   setWsStatus: (status: "connecting" | "open" | "closed") => void;
@@ -57,7 +64,13 @@ export interface AppStore {
   applySnapshot: (snapshot: StateSnapshot) => void;
 }
 
-export const useAppStore = create<AppStore>((set) => ({
+export const useAppStore = create<AppStore>((set, get) => ({
+  // --- User Role ---
+  userRole: "admin",
+  setUserRole: (role) => set({ userRole: role }),
+  canWrite: () => get().userRole !== "viewer",
+  isAdmin: () => get().userRole === "admin",
+
   // --- Connection ---
   wsStatus: "connecting",
   setWsStatus: (status) => set({ wsStatus: status }),

@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useAppStore } from "@/lib/store";
 import type { AgentStatus } from "@/lib/types";
 
 interface AgentActionsProps {
@@ -23,8 +24,11 @@ async function postAction(folder: string, action: "start" | "stop" | "interrupt"
 }
 
 export function AgentActions({ folder, status, size = "sm" }: AgentActionsProps) {
+  const canWrite = useAppStore((s) => s.canWrite);
   const isRunning = status === "running";
   const isIdle = status === "idle" || status === "error";
+
+  if (!canWrite()) return null;
 
   return (
     <div className="flex items-center gap-1">

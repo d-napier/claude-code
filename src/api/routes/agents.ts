@@ -4,6 +4,7 @@
 import { Router } from "express";
 import type { Database } from "../../db.js";
 import type { GroupQueue } from "../../group-queue.js";
+import { requireWriteAccess } from "../middleware/auth.js";
 
 export function agentRoutes(db: Database, queue: GroupQueue): Router {
   const router = Router();
@@ -25,7 +26,7 @@ export function agentRoutes(db: Database, queue: GroupQueue): Router {
   });
 
   // PUT /api/agents/:folder — update agent config
-  router.put("/:folder", (req, res) => {
+  router.put("/:folder", requireWriteAccess, (req, res) => {
     const existing = db.getGroup(req.params.folder);
     if (!existing) {
       res.status(404).json({ error: "Agent not found" });
@@ -54,7 +55,7 @@ export function agentRoutes(db: Database, queue: GroupQueue): Router {
   });
 
   // POST /api/agents/:folder/start — start agent
-  router.post("/:folder/start", async (req, res) => {
+  router.post("/:folder/start", requireWriteAccess, async (req, res) => {
     const group = db.getGroup(req.params.folder);
     if (!group) {
       res.status(404).json({ error: "Agent not found" });
@@ -72,14 +73,14 @@ export function agentRoutes(db: Database, queue: GroupQueue): Router {
   });
 
   // POST /api/agents/:folder/stop — graceful stop
-  router.post("/:folder/stop", async (req, res) => {
+  router.post("/:folder/stop", requireWriteAccess, async (req, res) => {
     // Graceful stop: let the queue drain for this group
     // The queue doesn't expose per-group stop yet, so we signal intent
     res.json({ status: "stopping", folder: req.params.folder });
   });
 
   // POST /api/agents/:folder/interrupt — abort current turn
-  router.post("/:folder/interrupt", (req, res) => {
+  router.post("/:folder/interrupt", requireWriteAccess, (req, res) => {
     // The GroupQueue manages abort controllers per group internally.
     // For now, we enqueue with interrupt mode awareness.
     res.json({ status: "interrupted", folder: req.params.folder });

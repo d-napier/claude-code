@@ -19,6 +19,7 @@ import type { ScheduleType, TaskState, TaskStatus } from "@/lib/types";
 export default function TasksPage() {
   const tasks = useAppStore((s) => s.tasks);
   const updateTask = useAppStore((s) => s.updateTask);
+  const canWrite = useAppStore((s) => s.canWrite);
   const [statusFilter, setStatusFilter] = useState<TaskStatus | "all">("all");
   const [formOpen, setFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskState | null>(null);
@@ -112,10 +113,12 @@ export default function TasksPage() {
             </p>
           </div>
         </div>
-        <Button onClick={handleCreate} className="gap-2">
-          <Plus className="h-4 w-4" />
-          New Task
-        </Button>
+        {canWrite() && (
+          <Button onClick={handleCreate} className="gap-2">
+            <Plus className="h-4 w-4" />
+            New Task
+          </Button>
+        )}
       </div>
 
       {/* Filters */}
