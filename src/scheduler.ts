@@ -30,7 +30,11 @@ export async function startSchedulerLoop(
 
         if (task.scheduleType === "cron") {
           const interval = CronExpressionParser.parse(task.scheduleValue);
-          db.updateNextRun(task.id, interval.next().toISOString());
+          const next = interval.next();
+          if (next) {
+            const iso = next.toISOString();
+            if (iso) db.updateNextRun(task.id, iso);
+          }
         } else if (task.scheduleType === "interval") {
           const nextRun = new Date(Date.now() + parseInt(task.scheduleValue));
           db.updateNextRun(task.id, nextRun.toISOString());

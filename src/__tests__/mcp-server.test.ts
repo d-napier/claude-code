@@ -64,28 +64,28 @@ describe("MCP Server", () => {
 
     it("main agent can send to any chat", async () => {
       const sendMsg = getSendMessage("main-group", true);
-      const result = await sendMsg.handler({ chatId: "other-group", text: "hello" }, {});
+      const result = await sendMsg.handler({ chatId: "other-group", text: "hello" } as any, {});
       expect(result.isError).toBeUndefined();
       expect(result.content[0].text).toContain("Message sent");
     });
 
     it("main agent can send to own chat", async () => {
       const sendMsg = getSendMessage("main-group", true);
-      const result = await sendMsg.handler({ chatId: "main-group", text: "hello" }, {});
+      const result = await sendMsg.handler({ chatId: "main-group", text: "hello" } as any, {});
       expect(result.isError).toBeUndefined();
       expect(result.content[0].text).toContain("Message sent");
     });
 
     it("non-main agent can send to own chat", async () => {
       const sendMsg = getSendMessage("my-group", false);
-      const result = await sendMsg.handler({ chatId: "my-group", text: "hello" }, {});
+      const result = await sendMsg.handler({ chatId: "my-group", text: "hello" } as any, {});
       expect(result.isError).toBeUndefined();
       expect(result.content[0].text).toContain("Message sent");
     });
 
     it("non-main agent CANNOT send to a foreign chat", async () => {
       const sendMsg = getSendMessage("my-group", false);
-      const result = await sendMsg.handler({ chatId: "other-group", text: "hello" }, {});
+      const result = await sendMsg.handler({ chatId: "other-group", text: "hello" } as any, {});
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain("Unauthorized");
     });
@@ -100,7 +100,7 @@ describe("MCP Server", () => {
     it("should create a task for own group", async () => {
       const scheduleTool = getScheduleTask("my-group", false);
       const result = await scheduleTool.handler(
-        { prompt: "check updates", scheduleType: "cron", scheduleValue: "0 * * * *" },
+        { prompt: "check updates", scheduleType: "cron", scheduleValue: "0 * * * *" } as any,
         {}
       );
       expect(result.content[0].text).toContain("scheduled");
@@ -112,7 +112,7 @@ describe("MCP Server", () => {
     it("non-main agent ignores targetGroup", async () => {
       const scheduleTool = getScheduleTask("my-group", false);
       await scheduleTool.handler(
-        { prompt: "test", scheduleType: "once", scheduleValue: "2099-01-01T00:00:00Z", targetGroup: "other-group" },
+        { prompt: "test", scheduleType: "once", scheduleValue: "2099-01-01T00:00:00Z", targetGroup: "other-group" } as any,
         {}
       );
       // Should still create in own group, not the targetGroup
@@ -125,7 +125,7 @@ describe("MCP Server", () => {
     it("main agent can target another group", async () => {
       const scheduleTool = getScheduleTask("main-group", true);
       await scheduleTool.handler(
-        { prompt: "test", scheduleType: "interval", scheduleValue: "60000", targetGroup: "worker-group" },
+        { prompt: "test", scheduleType: "interval", scheduleValue: "60000", targetGroup: "worker-group" } as any,
         {}
       );
       const tasks = db.getTasksByGroup("worker-group");
@@ -140,7 +140,7 @@ describe("MCP Server", () => {
 
       const tools = createIpcTools("group-a", true);
       const listTool = tools.find((t) => t.name === "list_tasks")!;
-      const result = await listTool.handler({} as Record<string, never>, {});
+      const result = await listTool.handler({} as any, {});
       const tasks = JSON.parse(result.content[0].text);
       expect(tasks).toHaveLength(2);
     });
@@ -151,7 +151,7 @@ describe("MCP Server", () => {
 
       const tools = createIpcTools("group-a", false);
       const listTool = tools.find((t) => t.name === "list_tasks")!;
-      const result = await listTool.handler({} as Record<string, never>, {});
+      const result = await listTool.handler({} as any, {});
       const tasks = JSON.parse(result.content[0].text);
       expect(tasks).toHaveLength(1);
       expect(tasks[0].prompt).toBe("a");
@@ -164,7 +164,7 @@ describe("MCP Server", () => {
 
       const tools = createIpcTools("my-group", false);
       const pauseTool = tools.find((t) => t.name === "pause_task")!;
-      const result = await pauseTool.handler({ taskId }, {});
+      const result = await pauseTool.handler({ taskId } as any, {});
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain("Unauthorized");
     });
@@ -174,7 +174,7 @@ describe("MCP Server", () => {
 
       const tools = createIpcTools("main-group", true);
       const pauseTool = tools.find((t) => t.name === "pause_task")!;
-      const result = await pauseTool.handler({ taskId }, {});
+      const result = await pauseTool.handler({ taskId } as any, {});
       expect(result.isError).toBeUndefined();
       expect(result.content[0].text).toContain("paused");
     });
@@ -182,7 +182,7 @@ describe("MCP Server", () => {
     it("returns error for non-existent task", async () => {
       const tools = createIpcTools("my-group", true);
       const pauseTool = tools.find((t) => t.name === "pause_task")!;
-      const result = await pauseTool.handler({ taskId: "nonexistent" }, {});
+      const result = await pauseTool.handler({ taskId: "nonexistent" } as any, {});
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain("not found");
     });
@@ -194,7 +194,7 @@ describe("MCP Server", () => {
 
       const tools = createIpcTools("my-group", false);
       const resumeTool = tools.find((t) => t.name === "resume_task")!;
-      const result = await resumeTool.handler({ taskId }, {});
+      const result = await resumeTool.handler({ taskId } as any, {});
       expect(result.isError).toBeUndefined();
       expect(result.content[0].text).toContain("resumed");
 
@@ -207,7 +207,7 @@ describe("MCP Server", () => {
 
       const tools = createIpcTools("my-group", false);
       const resumeTool = tools.find((t) => t.name === "resume_task")!;
-      const result = await resumeTool.handler({ taskId }, {});
+      const result = await resumeTool.handler({ taskId } as any, {});
       expect(result.isError).toBe(true);
     });
   });
@@ -218,7 +218,7 @@ describe("MCP Server", () => {
 
       const tools = createIpcTools("my-group", false);
       const cancelTool = tools.find((t) => t.name === "cancel_task")!;
-      const result = await cancelTool.handler({ taskId }, {});
+      const result = await cancelTool.handler({ taskId } as any, {});
       expect(result.isError).toBeUndefined();
       expect(result.content[0].text).toContain("cancelled");
 
@@ -231,7 +231,7 @@ describe("MCP Server", () => {
 
       const tools = createIpcTools("my-group", false);
       const cancelTool = tools.find((t) => t.name === "cancel_task")!;
-      const result = await cancelTool.handler({ taskId }, {});
+      const result = await cancelTool.handler({ taskId } as any, {});
       expect(result.isError).toBe(true);
 
       // Task should still exist
