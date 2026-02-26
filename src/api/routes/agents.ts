@@ -17,7 +17,7 @@ export function agentRoutes(db: Database, queue: GroupQueue): Router {
 
   // GET /api/agents/:folder — agent detail + config
   router.get("/:folder", (req, res) => {
-    const group = db.getGroup(req.params.folder);
+    const group = db.getGroup(req.params.folder as string);
     if (!group) {
       res.status(404).json({ error: "Agent not found" });
       return;
@@ -27,7 +27,7 @@ export function agentRoutes(db: Database, queue: GroupQueue): Router {
 
   // PUT /api/agents/:folder — update agent config
   router.put("/:folder", requireWriteAccess, (req, res) => {
-    const existing = db.getGroup(req.params.folder);
+    const existing = db.getGroup((req.params.folder as string));
     if (!existing) {
       res.status(404).json({ error: "Agent not found" });
       return;
@@ -35,7 +35,7 @@ export function agentRoutes(db: Database, queue: GroupQueue): Router {
 
     const { queueMode, debounceMs, maxRetries } = req.body;
     db.registerGroup({
-      folder: req.params.folder,
+      folder: (req.params.folder as string),
       chatJid: existing.chatJid,
       isMain: existing.isMain,
       queueMode: queueMode ?? existing.queueMode,
@@ -44,19 +44,19 @@ export function agentRoutes(db: Database, queue: GroupQueue): Router {
     });
 
     // Update queue config
-    queue.setGroupConfig(req.params.folder, {
+    queue.setGroupConfig((req.params.folder as string), {
       queueMode: queueMode ?? existing.queueMode,
       debounceMs: debounceMs ?? existing.debounceMs,
       maxRetries: maxRetries ?? existing.maxRetries,
     });
 
-    const updated = db.getGroup(req.params.folder);
+    const updated = db.getGroup((req.params.folder as string));
     res.json({ agent: updated });
   });
 
   // POST /api/agents/:folder/start — start agent
   router.post("/:folder/start", requireWriteAccess, async (req, res) => {
-    const group = db.getGroup(req.params.folder);
+    const group = db.getGroup((req.params.folder as string));
     if (!group) {
       res.status(404).json({ error: "Agent not found" });
       return;
@@ -68,22 +68,22 @@ export function agentRoutes(db: Database, queue: GroupQueue): Router {
       return;
     }
 
-    await queue.enqueue(req.params.folder, prompt);
-    res.json({ status: "queued", folder: req.params.folder });
+    await queue.enqueue((req.params.folder as string), prompt);
+    res.json({ status: "queued", folder: (req.params.folder as string) });
   });
 
   // POST /api/agents/:folder/stop — graceful stop
   router.post("/:folder/stop", requireWriteAccess, async (req, res) => {
     // Graceful stop: let the queue drain for this group
     // The queue doesn't expose per-group stop yet, so we signal intent
-    res.json({ status: "stopping", folder: req.params.folder });
+    res.json({ status: "stopping", folder: (req.params.folder as string) });
   });
 
   // POST /api/agents/:folder/interrupt — abort current turn
   router.post("/:folder/interrupt", requireWriteAccess, (req, res) => {
     // The GroupQueue manages abort controllers per group internally.
     // For now, we enqueue with interrupt mode awareness.
-    res.json({ status: "interrupted", folder: req.params.folder });
+    res.json({ status: "interrupted", folder: (req.params.folder as string) });
   });
 
   return router;

@@ -23,7 +23,7 @@ export function sessionRoutes(db: Database): Router {
   // GET /api/sessions/:id — session detail
   router.get("/:id", (req, res) => {
     const groups = db.getAllGroups();
-    const group = groups.find(g => g.sessionId === req.params.id);
+    const group = groups.find(g => g.sessionId === (req.params.id as string));
     if (!group) {
       res.status(404).json({ error: "Session not found" });
       return;

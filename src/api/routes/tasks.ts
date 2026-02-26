@@ -41,7 +41,7 @@ export function taskRoutes(db: Database): Router {
 
   // PUT /api/tasks/:id — update task
   router.put("/:id", requireWriteAccess, (req, res) => {
-    const existing = db.getTask(req.params.id);
+    const existing = db.getTask((req.params.id as string));
     if (!existing) {
       res.status(404).json({ error: "Task not found" });
       return;
@@ -49,26 +49,26 @@ export function taskRoutes(db: Database): Router {
 
     const { status, nextRun } = req.body;
     if (status) {
-      db.setTaskStatus(req.params.id, status);
+      db.setTaskStatus((req.params.id as string), status);
     }
     if (nextRun) {
-      db.updateNextRun(req.params.id, nextRun);
+      db.updateNextRun((req.params.id as string), nextRun);
     }
 
-    const updated = db.getTask(req.params.id);
+    const updated = db.getTask((req.params.id as string));
     res.json({ task: updated });
   });
 
   // DELETE /api/tasks/:id — delete task
   router.delete("/:id", requireWriteAccess, (req, res) => {
-    const existing = db.getTask(req.params.id);
+    const existing = db.getTask((req.params.id as string));
     if (!existing) {
       res.status(404).json({ error: "Task not found" });
       return;
     }
 
-    db.deleteTask(req.params.id);
-    res.json({ deleted: true, id: req.params.id });
+    db.deleteTask((req.params.id as string));
+    res.json({ deleted: true, id: (req.params.id as string) });
   });
 
   return router;
