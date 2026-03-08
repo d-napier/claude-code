@@ -3,1188 +3,1082 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Agentic AI Enterprise Readiness | Strategic Consulting Framework</title>
+<title>Agentic AI Enterprise Readiness // Strategic Consulting Framework</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Instrument+Serif:ital@0;1&family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800;900&display=swap');
 
   :root {
-    --black: #0a0a0a;
-    --white: #f5f5f0;
-    --red: #ff2d2d;
-    --yellow: #ffe14d;
-    --blue: #2d5bff;
-    --green: #00e676;
-    --gray: #888;
-    --border: 3px solid var(--black);
-    --border-thick: 5px solid var(--black);
+    --ink: #0c0c0c;
+    --paper: #e8e4dc;
+    --signal: #e6232e;
+    --caution: #f5c518;
+    --terminal: #00ff88;
+    --cold: #3d5afe;
+    --dim: #7a7568;
+    --bone: #d4cfc6;
+    --slab: 4px solid var(--ink);
+    --hairline: 1px solid rgba(0,0,0,0.12);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  html {
-    font-size: 16px;
-    scroll-behavior: smooth;
-  }
+  html { font-size: 16px; }
 
   body {
-    font-family: 'Inter', -apple-system, sans-serif;
-    background: var(--white);
-    color: var(--black);
-    overflow-x: hidden;
+    font-family: 'DM Sans', sans-serif;
+    background: var(--ink);
+    color: var(--ink);
+    overflow: hidden;
+    cursor: default;
   }
 
-  /* ─── NAV ─── */
-  nav {
-    position: fixed;
-    top: 0;
-    left: 0;
+  /* ═══════════ 16:9 SLIDE ENGINE ═══════════ */
+  .deck {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
     width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 5vh 5vw;
+    background: var(--paper);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+                visibility 0s 0.45s;
+    overflow: hidden;
+  }
+
+  .slide.active {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+                visibility 0s 0s;
+  }
+
+  /* ═══════════ NAVIGATION CONTROLS ═══════════ */
+  .controls {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
     z-index: 1000;
-    background: var(--black);
-    color: var(--white);
-    border-bottom: var(--border-thick);
-    border-color: var(--red);
+    height: 48px;
+    background: var(--ink);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 2rem;
-    height: 52px;
-    font-family: 'Space Mono', monospace;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
+    padding: 0 24px;
+    border-top: 3px solid var(--signal);
+    user-select: none;
   }
 
-  nav .nav-left { display: flex; gap: 0.5rem; align-items: center; }
-  nav .nav-right { display: flex; gap: 1.5rem; align-items: center; }
-  nav .slide-counter { color: var(--red); font-weight: 700; }
+  .controls-left, .controls-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
 
-  .nav-dot {
-    width: 8px;
-    height: 8px;
-    background: #333;
+  .ctrl-btn {
+    background: none;
+    border: 2px solid #333;
+    color: #888;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 4px 14px;
     cursor: pointer;
-    transition: background 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    transition: all 0.15s;
   }
-  .nav-dot.active { background: var(--red); }
-  .nav-dot:hover { background: var(--yellow); }
 
-  /* ─── SLIDES ─── */
-  .slide {
-    min-height: 100vh;
-    padding: 80px 4vw 4vw;
+  .ctrl-btn:hover {
+    border-color: var(--signal);
+    color: var(--signal);
+  }
+
+  .ctrl-btn:active {
+    background: var(--signal);
+    color: var(--ink);
+  }
+
+  .slide-indicator {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--signal);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+
+  .progress-track {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+  }
+
+  .progress-pip {
+    width: 18px;
+    height: 4px;
+    background: #222;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .progress-pip.visited { background: #444; }
+  .progress-pip.active { background: var(--signal); width: 28px; }
+  .progress-pip:hover { background: var(--caution); }
+
+  .branding {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #444;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+  }
+
+  /* ═══════════ TYPOGRAPHY ═══════════ */
+  .t-display {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(48px, 7.5vw, 110px);
+    line-height: 0.92;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+  }
+
+  .t-headline {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(36px, 5vw, 72px);
+    line-height: 0.95;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+  }
+
+  .t-editorial {
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(22px, 2.8vw, 38px);
+    line-height: 1.25;
+    font-style: italic;
+  }
+
+  .t-body {
+    font-family: 'DM Sans', sans-serif;
+    font-size: clamp(13px, 1.1vw, 16px);
+    line-height: 1.55;
+    font-weight: 400;
+  }
+
+  .t-mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: clamp(10px, 0.75vw, 12px);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .t-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: clamp(9px, 0.65vw, 11px);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--dim);
+  }
+
+  /* ═══════════ COLORS ═══════════ */
+  .bg-ink { background: var(--ink); color: var(--paper); }
+  .bg-signal { background: var(--signal); color: var(--paper); }
+  .bg-caution { background: var(--caution); color: var(--ink); }
+  .bg-terminal { background: #0a1a0f; color: var(--terminal); }
+  .c-signal { color: var(--signal); }
+  .c-dim { color: var(--dim); }
+  .c-terminal { color: var(--terminal); }
+
+  /* ═══════════ LAYOUT COMPONENTS ═══════════ */
+  .split {
+    display: grid;
+    gap: 0;
+    flex: 1;
+  }
+  .split-2 { grid-template-columns: 1fr 1fr; }
+  .split-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .split-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .split-5 { grid-template-columns: 1fr 1fr 1fr 1fr 1fr; }
+  .split-23 { grid-template-columns: 2fr 3fr; }
+  .split-32 { grid-template-columns: 3fr 2fr; }
+
+  .panel {
+    padding: clamp(20px, 2.5vw, 40px);
+    border: var(--slab);
     display: flex;
     flex-direction: column;
     justify-content: center;
     position: relative;
-    border-bottom: var(--border-thick);
+    overflow: hidden;
   }
 
-  .slide-number {
+  .panel + .panel { border-left: none; }
+
+  .panel-ghost-num {
     position: absolute;
-    top: 70px;
-    right: 4vw;
-    font-family: 'Space Mono', monospace;
-    font-size: 6rem;
-    font-weight: 700;
+    top: -0.15em;
+    right: 0.1em;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(80px, 12vw, 180px);
     color: rgba(0,0,0,0.04);
     line-height: 1;
-    user-select: none;
+    pointer-events: none;
   }
 
-  /* ─── TYPOGRAPHY ─── */
-  h1 {
-    font-size: clamp(3rem, 7vw, 7rem);
-    font-weight: 900;
-    line-height: 0.95;
-    letter-spacing: -0.04em;
-    max-width: 1200px;
-  }
+  .bg-ink .panel-ghost-num { color: rgba(255,255,255,0.04); }
 
-  h2 {
-    font-size: clamp(2rem, 4.5vw, 4.5rem);
-    font-weight: 900;
+  /* ═══════════ STAT ═══════════ */
+  .stat-val {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(42px, 6vw, 80px);
     line-height: 1;
-    letter-spacing: -0.03em;
-    max-width: 1000px;
+    letter-spacing: 0.02em;
   }
 
-  h3 {
-    font-size: clamp(1.2rem, 2vw, 1.8rem);
-    font-weight: 800;
-    line-height: 1.2;
-    letter-spacing: -0.02em;
-    text-transform: uppercase;
+  /* ═══════════ QUOTE ═══════════ */
+  .blockquote {
+    border-left: 5px solid var(--signal);
+    padding-left: clamp(16px, 2vw, 28px);
+    margin: clamp(12px, 2vh, 24px) 0;
   }
 
-  .subtitle {
-    font-family: 'Space Mono', monospace;
-    font-size: clamp(0.8rem, 1.2vw, 1rem);
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    color: var(--gray);
-    margin-bottom: 1rem;
-  }
-
-  .lead {
-    font-size: clamp(1.1rem, 1.8vw, 1.5rem);
-    font-weight: 400;
-    line-height: 1.5;
-    max-width: 700px;
-    margin-top: 1.5rem;
-  }
-
-  .tag {
-    display: inline-block;
-    font-family: 'Space Mono', monospace;
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    padding: 0.3rem 0.8rem;
-    border: 2px solid var(--black);
-    margin-right: 0.5rem;
-    margin-bottom: 0.5rem;
-  }
-  .tag--red { background: var(--red); color: var(--white); border-color: var(--red); }
-  .tag--yellow { background: var(--yellow); }
-  .tag--blue { background: var(--blue); color: var(--white); border-color: var(--blue); }
-  .tag--green { background: var(--green); border-color: var(--green); }
-
-  /* ─── GRIDS ─── */
-  .grid-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0;
-  }
-
-  .grid-3 {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0;
-  }
-
-  .grid-4 {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0;
-  }
-
-  .grid-5 {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 0;
-  }
-
-  .cell {
-    border: var(--border);
-    padding: 2rem;
-    position: relative;
-  }
-
-  .cell--dark {
-    background: var(--black);
-    color: var(--white);
-  }
-
-  .cell--red { background: var(--red); color: var(--white); }
-  .cell--yellow { background: var(--yellow); }
-  .cell--blue { background: var(--blue); color: var(--white); }
-
-  .cell h3 { margin-bottom: 1rem; }
-  .cell p { font-size: 0.95rem; line-height: 1.5; }
-  .cell .cell-number {
-    font-family: 'Space Mono', monospace;
-    font-size: 3rem;
-    font-weight: 700;
-    opacity: 0.15;
-    position: absolute;
-    top: 1rem;
-    right: 1.5rem;
-  }
-
-  /* ─── STAT BLOCKS ─── */
-  .stat {
-    text-align: center;
-    padding: 2rem;
-  }
-
-  .stat-number {
-    font-size: clamp(3rem, 6vw, 5rem);
-    font-weight: 900;
-    line-height: 1;
-    letter-spacing: -0.04em;
-  }
-
-  .stat-label {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    margin-top: 0.5rem;
-    color: var(--gray);
-  }
-
-  .stat--dark .stat-label { color: #aaa; }
-
-  /* ─── QUOTE ─── */
-  blockquote {
-    font-size: clamp(1.3rem, 2.5vw, 2.2rem);
-    font-weight: 600;
-    line-height: 1.3;
-    border-left: 6px solid var(--red);
-    padding-left: 2rem;
-    max-width: 800px;
-    margin: 2rem 0;
-  }
-
-  blockquote cite {
-    display: block;
-    font-family: 'Space Mono', monospace;
-    font-size: 0.75rem;
-    font-weight: 400;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--gray);
-    margin-top: 1rem;
-  }
-
-  /* ─── FRAMEWORK STACK ─── */
-  .stack-layer {
-    border: var(--border);
-    padding: 1.5rem 2rem;
-    display: flex;
-    align-items: center;
-    gap: 2rem;
-    transition: background 0.2s;
-  }
-
-  .stack-layer:hover { background: var(--yellow); }
-
-  .stack-level {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    min-width: 80px;
-    color: var(--gray);
-  }
-
-  .stack-title {
-    font-size: 1.3rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: -0.01em;
-    min-width: 280px;
-  }
-
-  .stack-desc {
-    font-size: 0.9rem;
-    line-height: 1.4;
-    color: #555;
-  }
-
-  /* ─── COMPARISON TABLE ─── */
-  .compare-table {
+  /* ═══════════ TABLE ═══════════ */
+  .data-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 2rem;
+    font-size: clamp(11px, 0.9vw, 14px);
   }
 
-  .compare-table th,
-  .compare-table td {
-    border: var(--border);
-    padding: 1rem 1.5rem;
+  .data-table th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: clamp(9px, 0.65vw, 11px);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 10px 14px;
     text-align: left;
-    font-size: 0.9rem;
+    border: var(--slab);
+  }
+
+  .data-table td {
+    padding: 10px 14px;
+    border: 2px solid var(--ink);
     line-height: 1.4;
     vertical-align: top;
   }
 
-  .compare-table th {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.7rem;
+  .data-table td:first-child {
+    font-weight: 700;
+    min-width: 110px;
+  }
+
+  .data-table tr:nth-child(even) td { background: rgba(0,0,0,0.025); }
+
+  .cell-win { background: rgba(0,200,80,0.08) !important; }
+  .cell-fail { background: rgba(230,35,46,0.06) !important; }
+
+  /* ═══════════ STACK LAYERS ═══════════ */
+  .stack-row {
+    display: flex;
+    align-items: stretch;
+    border: var(--slab);
+    border-top: none;
+  }
+  .stack-row:first-child { border-top: var(--slab); }
+
+  .stack-level-tag {
+    min-width: clamp(60px, 5vw, 90px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-right: var(--slab);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .stack-content {
+    flex: 1;
+    padding: clamp(10px, 1.2vh, 18px) clamp(14px, 1.5vw, 24px);
+    display: flex;
+    gap: clamp(12px, 2vw, 24px);
+    align-items: center;
+  }
+
+  .stack-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(18px, 1.8vw, 26px);
+    letter-spacing: 0.03em;
+    min-width: clamp(160px, 16vw, 240px);
+  }
+
+  .stack-desc {
+    font-size: clamp(11px, 0.9vw, 14px);
+    line-height: 1.45;
+    color: #555;
+  }
+
+  /* ═══════════ TAG ═══════════ */
+  .tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
     text-transform: uppercase;
     letter-spacing: 0.15em;
-    background: var(--black);
-    color: var(--white);
+    padding: 3px 10px;
+    border: 2px solid var(--ink);
   }
+  .tag-signal { background: var(--signal); color: white; border-color: var(--signal); }
+  .tag-caution { background: var(--caution); border-color: var(--caution); }
 
-  .compare-table tr:nth-child(even) td { background: rgba(0,0,0,0.02); }
-
-  .compare-table td:first-child {
-    font-weight: 700;
-    min-width: 160px;
-  }
-
-  /* ─── DIAGRAM ─── */
-  .diagram {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.85rem;
-    background: var(--black);
-    color: var(--green);
-    padding: 2.5rem;
-    border: var(--border);
-    white-space: pre;
-    line-height: 1.6;
-    overflow-x: auto;
-    max-width: 100%;
-  }
-
-  /* ─── MATURITY SCALE ─── */
-  .maturity-bar {
+  /* ═══════════ MATURITY BAR ═══════════ */
+  .maturity-track {
     display: flex;
-    border: var(--border);
-    margin: 1rem 0;
+    border: var(--slab);
     overflow: hidden;
   }
 
-  .maturity-segment {
+  .maturity-cell {
     flex: 1;
-    padding: 1.5rem 1rem;
-    border-right: var(--border);
+    padding: clamp(10px, 1.2vh, 18px) clamp(8px, 0.8vw, 14px);
     text-align: center;
-    font-size: 0.8rem;
+    font-size: clamp(10px, 0.85vw, 13px);
     font-weight: 600;
-    transition: all 0.2s;
+    border-right: 2px solid var(--ink);
   }
 
-  .maturity-segment:last-child { border-right: none; }
+  .maturity-cell:last-child { border-right: none; }
 
-  .maturity-segment .maturity-label {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.6rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
+  .maturity-cell .m-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
     display: block;
-    margin-top: 0.3rem;
-    opacity: 0.6;
+    margin-top: 4px;
+    opacity: 0.5;
+    text-transform: uppercase;
   }
 
-  /* ─── ACTION LIST ─── */
+  /* ═══════════ ACTION LIST ═══════════ */
   .action-list {
     list-style: none;
-    counter-reset: action;
-    max-width: 800px;
+    counter-reset: act;
   }
 
   .action-list li {
-    counter-increment: action;
-    border-bottom: 2px solid var(--black);
-    padding: 1.2rem 0;
+    counter-increment: act;
     display: flex;
-    gap: 1.5rem;
-    align-items: flex-start;
-    font-size: 1.05rem;
-    line-height: 1.4;
+    gap: clamp(10px, 1vw, 18px);
+    padding: clamp(8px, 1vh, 14px) 0;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    font-size: clamp(12px, 1vw, 15px);
+    line-height: 1.45;
   }
 
   .action-list li::before {
-    content: counter(action, decimal-leading-zero);
-    font-family: 'Space Mono', monospace;
-    font-size: 0.8rem;
+    content: counter(act, decimal-leading-zero);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--signal);
     font-weight: 700;
-    color: var(--red);
-    min-width: 2rem;
-    padding-top: 0.15rem;
+    min-width: 22px;
+    padding-top: 3px;
   }
 
-  /* ─── RISK MATRIX ─── */
-  .risk-cell {
-    padding: 1.5rem;
-    border: var(--border);
-    min-height: 120px;
+  /* ═══════════ TERMINAL BLOCK ═══════════ */
+  .terminal {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: clamp(11px, 0.85vw, 14px);
+    background: #0a1a0f;
+    color: var(--terminal);
+    padding: clamp(16px, 2vw, 28px);
+    border: var(--slab);
+    white-space: pre;
+    line-height: 1.7;
+    overflow-x: auto;
   }
 
-  .risk-cell h4 {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 0.8rem;
-  }
-
-  .risk-cell p {
-    font-size: 0.85rem;
-    line-height: 1.4;
-  }
-
-  /* ─── RESPONSIVE ─── */
-  @media (max-width: 900px) {
-    .grid-2, .grid-3, .grid-4, .grid-5 { grid-template-columns: 1fr; }
-    .stack-layer { flex-direction: column; gap: 0.5rem; align-items: flex-start; }
-    .compare-table { font-size: 0.8rem; }
-    nav .nav-right { display: none; }
-  }
-
-  /* ─── ANIMATIONS ─── */
-  .fade-in {
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.6s ease, transform 0.6s ease;
-  }
-
-  .fade-in.visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  /* ─── FOOTER ─── */
-  .slide-footer {
+  /* ═══════════ CORNER MARK ═══════════ */
+  .corner-mark {
     position: absolute;
-    bottom: 2rem;
-    left: 4vw;
-    font-family: 'Space Mono', monospace;
-    font-size: 0.65rem;
+    top: clamp(14px, 2vh, 24px);
+    right: clamp(20px, 3vw, 40px);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--dim);
     text-transform: uppercase;
     letter-spacing: 0.15em;
-    color: var(--gray);
   }
 
-  /* ─── SPECIAL LAYOUTS ─── */
-  .hero-split {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    min-height: 100vh;
+  .bg-ink .corner-mark { color: #444; }
+
+  /* ═══════════ SLIDE HEADER ═══════════ */
+  .slide-head {
+    margin-bottom: clamp(12px, 2vh, 24px);
   }
 
-  .hero-split > div {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 4rem;
-  }
-
-  @media (max-width: 900px) {
-    .hero-split { grid-template-columns: 1fr; }
-  }
-
-  .big-number {
-    font-size: clamp(5rem, 12vw, 12rem);
-    font-weight: 900;
-    line-height: 0.85;
-    letter-spacing: -0.06em;
-  }
-
-  .red { color: var(--red); }
-  .yellow { color: #c5a800; }
-  .blue { color: var(--blue); }
-  .green { color: #00b862; }
-
-  .mt-1 { margin-top: 1rem; }
-  .mt-2 { margin-top: 2rem; }
-  .mt-3 { margin-top: 3rem; }
-  .mb-1 { margin-bottom: 1rem; }
-  .mb-2 { margin-bottom: 2rem; }
-
+  /* ═══════════ UTILITIES ═══════════ */
+  .mt-1 { margin-top: clamp(8px, 1vh, 12px); }
+  .mt-2 { margin-top: clamp(12px, 1.5vh, 20px); }
+  .mt-3 { margin-top: clamp(16px, 2.5vh, 32px); }
+  .mb-1 { margin-bottom: clamp(8px, 1vh, 12px); }
+  .gap-1 { gap: clamp(8px, 1vh, 14px); }
+  .flex-col { display: flex; flex-direction: column; }
+  .flex-1 { flex: 1; }
+  .max-w-700 { max-width: 700px; }
   .max-w-800 { max-width: 800px; }
-  .max-w-1000 { max-width: 1000px; }
 
-  .flex-between { display: flex; justify-content: space-between; align-items: center; }
+  /* ═══════════ NOISE OVERLAY ═══════════ */
+  .slide::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 256px;
+  }
+
+  .bg-ink::after { opacity: 0.04; }
+
+  /* ═══════════ DIAGONAL SLASH ═══════════ */
+  .slash-accent {
+    position: absolute;
+    width: 200%;
+    height: 3px;
+    background: var(--signal);
+    transform: rotate(-3deg);
+    left: -20%;
+    opacity: 0.6;
+  }
 </style>
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════════ NAV ═══ -->
-<nav>
-  <div class="nav-left">
-    <span style="font-weight:700; color:var(--red);">///</span>
-    <span>Agentic AI Readiness</span>
-  </div>
-  <div class="nav-right">
-    <span class="slide-counter" id="slideCounter">01 / 16</span>
-    <div style="display:flex; gap:4px;" id="navDots"></div>
-  </div>
-</nav>
+<div class="deck" id="deck">
 
-<!-- ═══════════════════════════════════════════════ SLIDE 01: COVER ═══ -->
-<section class="slide" id="slide-1" style="background:var(--black); color:var(--white); justify-content:flex-end; padding-bottom:6vh;">
-  <div class="subtitle" style="color:var(--red);">Enterprise Consulting Framework / March 2026</div>
-  <h1 style="color:var(--white);">The Agentic<br>Transition Is<br>Not Coming.<br><span class="red">It's Here.</span></h1>
-  <p class="lead" style="color:#aaa; margin-top:2rem; max-width:600px;">
-    A strategic framework for Fortune 500 leadership navigating the shift from chat-based AI to autonomous agent systems. Based on field research, blind model evaluations, and enterprise deployment analysis.
+<!-- ═══════════════════════ 01: COVER ═══════════════════════ -->
+<section class="slide bg-ink active" data-slide="1">
+  <div class="corner-mark">Q1 2026 // Confidential</div>
+  <div class="t-label c-signal" style="margin-bottom:clamp(12px,2vh,24px);">Enterprise Consulting Framework</div>
+  <h1 class="t-display" style="color:var(--paper);">The Agentic<br>Transition Is<br>Not Coming.<br><span class="c-signal">It's Here.</span></h1>
+  <p class="t-editorial mt-3" style="color:var(--bone); max-width:640px;">
+    A strategic framework for Fortune 500 leadership navigating the shift from chat-based AI to autonomous agent systems.
   </p>
-  <div class="mt-3">
-    <span class="tag tag--red">C-Suite Briefing</span>
-    <span class="tag" style="border-color:#555; color:#aaa;">Confidential</span>
-    <span class="tag" style="border-color:#555; color:#aaa;">Q1 2026</span>
+  <div class="mt-3" style="display:flex; gap:8px;">
+    <span class="tag tag-signal">C-Suite Briefing</span>
+    <span class="tag" style="border-color:#444; color:#888;">March 2026</span>
   </div>
-  <div class="slide-footer" style="color:#555;">Source: AI News & Strategy Daily / Nate B Jones / 10 Transcript Analysis</div>
+  <div class="slash-accent" style="bottom:38%;"></div>
 </section>
 
-<!-- ═══════════════════════════════════════════════ SLIDE 02: THE PROBLEM ═══ -->
-<section class="slide" id="slide-2">
-  <div class="slide-number">02</div>
-  <div class="subtitle">The Executive Problem</div>
-  <h2>Your organization is making a<br>$100M+ decision with<br>20% of the relevant<br>information.</h2>
-  <p class="lead mt-2">
-    Most enterprises are evaluating AI on model benchmarks alone. The execution environment, memory architecture, and operational skill infrastructure surrounding the model determine 80% of the economic value. You are optimizing the wrong variable.
+<!-- ═══════════════════════ 02: THE PROBLEM ═══════════════════════ -->
+<section class="slide" data-slide="2">
+  <div class="corner-mark">02</div>
+  <div class="t-label mb-1">The Executive Problem</div>
+  <h2 class="t-headline">Your organization is making<br>a $100M+ decision with 20%<br>of the relevant information.</h2>
+  <p class="t-body mt-2 max-w-700">
+    Most enterprises evaluate AI on model benchmarks alone. The execution environment, memory architecture, and operational skills surrounding the model determine 80% of economic value. You are optimizing the wrong variable.
   </p>
-  <div class="mt-3">
-    <span class="tag tag--red">Strategic Risk</span>
+  <div class="mt-3" style="display:flex; gap:8px;">
+    <span class="tag tag-signal">Strategic Risk</span>
     <span class="tag">Harness Lock-In</span>
     <span class="tag">Compounding Cost</span>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════ SLIDE 03: SIGNAL WALL ═══ -->
-<section class="slide" id="slide-3" style="padding-top:80px; padding-bottom:2rem;">
-  <div class="slide-number">03</div>
-  <div class="subtitle">Market Signals / February-March 2026</div>
-  <h3 class="mb-2">The agentic threshold has been crossed</h3>
-  <div class="grid-4" style="margin-top:1rem;">
-    <div class="cell cell--dark stat">
-      <div class="stat-number red">2x</div>
-      <div class="stat-label stat--dark">Agent session duration growth per quarter</div>
+<!-- ═══════════════════════ 03: SIGNAL WALL ═══════════════════════ -->
+<section class="slide" data-slide="3" style="padding-bottom:calc(48px + 3vh);">
+  <div class="corner-mark">03</div>
+  <div class="slide-head">
+    <div class="t-label mb-1">Market Signals // Feb-Mar 2026</div>
+    <h2 class="t-headline" style="font-size:clamp(28px,3.5vw,50px);">The agentic threshold<br>has been crossed.</h2>
+  </div>
+  <div class="split split-4 flex-1" style="margin-top:clamp(8px,1vh,16px);">
+    <div class="panel bg-ink" style="text-align:center; justify-content:center;">
+      <div class="stat-val c-signal">2x</div>
+      <div class="t-label mt-1" style="color:#888;">Agent session growth / quarter</div>
     </div>
-    <div class="cell stat">
-      <div class="stat-number">13K</div>
-      <div class="stat-label">Custom AI solutions at Telus alone</div>
+    <div class="panel" style="text-align:center;">
+      <div class="stat-val">13K</div>
+      <div class="t-label mt-1">Custom AI solutions<br>at Telus alone</div>
     </div>
-    <div class="cell cell--dark stat">
-      <div class="stat-number" style="color:var(--yellow);">1.5M</div>
-      <div class="stat-label stat--dark">Autonomous agents spawned by OpenClaw in weeks</div>
+    <div class="panel bg-ink" style="text-align:center;">
+      <div class="stat-val" style="color:var(--caution);">1.5M</div>
+      <div class="t-label mt-1" style="color:#888;">Autonomous agents spawned<br>by OpenClaw in weeks</div>
     </div>
-    <div class="cell stat">
-      <div class="stat-number">190K</div>
-      <div class="stat-label">GitHub stars on OpenClaw</div>
+    <div class="panel" style="text-align:center;">
+      <div class="stat-val">$840B</div>
+      <div class="t-label mt-1">OpenAI post-money<br>valuation</div>
     </div>
   </div>
-  <div class="grid-4">
-    <div class="cell stat">
-      <div class="stat-number">78%</div>
-      <div class="stat-label">Claude in Claude Code harness</div>
+  <div class="split split-4" style="margin-top:-4px;">
+    <div class="panel" style="text-align:center;">
+      <div class="stat-val c-terminal" style="font-size:clamp(36px,4vw,58px);">78%</div>
+      <div class="t-label mt-1">Claude in its harness</div>
     </div>
-    <div class="cell cell--red stat">
-      <div class="stat-number">42%</div>
-      <div class="stat-label">Same Claude model in different harness</div>
+    <div class="panel bg-signal" style="text-align:center;">
+      <div class="stat-val" style="color:var(--paper);">42%</div>
+      <div class="t-label mt-1" style="color:rgba(255,255,255,0.7);">Same model,<br>different harness</div>
     </div>
-    <div class="cell stat">
-      <div class="stat-number">$840B</div>
-      <div class="stat-label">OpenAI post-money valuation</div>
+    <div class="panel" style="text-align:center;">
+      <div class="stat-val">190K</div>
+      <div class="t-label mt-1">GitHub stars<br>OpenClaw</div>
     </div>
-    <div class="cell cell--dark stat">
-      <div class="stat-number" style="color:var(--green);">10x</div>
-      <div class="stat-label stat--dark">Productivity gap between calibrated and uncalibrated teams</div>
+    <div class="panel bg-ink" style="text-align:center;">
+      <div class="stat-val c-signal" style="font-size:clamp(36px,4vw,58px);">10x</div>
+      <div class="t-label mt-1" style="color:#888;">Productivity gap:<br>calibrated vs. not</div>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════ SLIDE 04: CORE THESIS ═══ -->
-<section class="slide" id="slide-4" style="background:var(--red); color:var(--white);">
-  <div class="slide-number" style="color:rgba(255,255,255,0.15);">04</div>
-  <div class="subtitle" style="color:rgba(255,255,255,0.6);">Core Thesis</div>
-  <h1 style="color:var(--white);">The model is the brain.<br>The harness is<br>the body.<br>You're buying brains<br>without bodies.</h1>
-  <p class="lead mt-2" style="color:rgba(255,255,255,0.8); max-width:700px;">
-    Same model. Same weights. Same training. 78% accuracy in one harness. 42% in another. The execution environment -- memory, tools, context management, multi-agent orchestration -- is a performance multiplier, not an optimization layer.
+<!-- ═══════════════════════ 04: CORE THESIS ═══════════════════════ -->
+<section class="slide bg-signal" data-slide="4">
+  <div class="corner-mark" style="color:rgba(255,255,255,0.4);">04</div>
+  <h1 class="t-display" style="color:var(--paper);">The model<br>is a brain.<br>The harness<br>is the body.</h1>
+  <p class="t-editorial mt-2" style="color:rgba(255,255,255,0.85); max-width:620px;">
+    Same model. Same weights. Same training. 78% accuracy in one harness. 42% in another. You're buying brains without bodies.
   </p>
 </section>
 
-<!-- ═══════════════════════════════════════════════ SLIDE 05: HARNESS THEORY ═══ -->
-<section class="slide" id="slide-5" style="padding-top:80px; padding-bottom:2rem;">
-  <div class="slide-number">05</div>
-  <div class="subtitle">Framework 01 / Harness Theory</div>
-  <h2 class="mb-2">Five dimensions of<br>architectural divergence</h2>
-
-  <table class="compare-table">
+<!-- ═══════════════════════ 05: HARNESS DIVERGENCE ═══════════════════════ -->
+<section class="slide" data-slide="5" style="padding-bottom:calc(48px + 2vh);">
+  <div class="corner-mark">05</div>
+  <div class="slide-head">
+    <div class="t-label mb-1">Framework 01 // Harness Theory</div>
+    <h2 class="t-headline" style="font-size:clamp(26px,3.2vw,46px);">Five dimensions of architectural divergence</h2>
+  </div>
+  <table class="data-table mt-1">
     <thead>
-      <tr>
-        <th>Dimension</th>
-        <th>Claude Code (Anthropic)</th>
-        <th>Codex (OpenAI)</th>
-        <th>Strategic Implication</th>
-      </tr>
+      <tr><th>Dimension</th><th>Claude Code (Anthropic)</th><th>Codex (OpenAI)</th><th>Strategic Implication</th></tr>
     </thead>
     <tbody>
-      <tr>
-        <td>Execution</td>
-        <td>"Bash is all you need." Composable Unix primitives. Lean context window.</td>
-        <td>Chrome DevTools protocol. Ephemeral observability stack per agent.</td>
-        <td>Trust boundary: your workstation vs. isolated cloud container</td>
-      </tr>
-      <tr>
-        <td>Memory</td>
-        <td>Agent remembers. Structured artifacts, progress files, git history.</td>
-        <td>Codebase remembers. Institutional memory encoded in repo.</td>
-        <td>claude.md investments don't transfer. Switching cost compounds quarterly.</td>
-      </tr>
-      <tr>
-        <td>Context</td>
-        <td>Compacts window + delegates to sub-agents with own windows.</td>
-        <td>Clean sandbox per task. Tasks don't compete for space.</td>
-        <td>Claude: deep understanding. Codex: parallel independence.</td>
-      </tr>
-      <tr>
-        <td>Tools</td>
-        <td>MCP-native. Skills load only descriptions; full defs on demand.</td>
-        <td>JSON-RPC app server exposing tools as endpoints.</td>
-        <td>MCP = protocol standard. Integration depth varies wildly.</td>
-      </tr>
-      <tr>
-        <td>Multi-Agent</td>
-        <td>Orchestrated collaboration. Coordinator + sub-agents + shared tasks.</td>
-        <td>Isolation model. Each task sandboxed. Coordination via git.</td>
-        <td>Collaboration vs. safety trade-off. Determines autonomy ceiling.</td>
-      </tr>
+      <tr><td>Execution</td><td>"Bash is all you need." Composable Unix primitives. Lean context.</td><td>Chrome DevTools protocol. Ephemeral observability per agent.</td><td>Trust boundary: your workstation vs. isolated cloud.</td></tr>
+      <tr><td>Memory</td><td>Agent remembers. Structured artifacts + git history.</td><td>Codebase remembers. Decisions encoded in repo.</td><td>claude.md investments don't transfer. Switching cost compounds quarterly.</td></tr>
+      <tr><td>Context</td><td>Compacts window + sub-agents with own context.</td><td>Clean sandbox per task. Tasks don't compete for space.</td><td>Deep understanding vs. parallel independence.</td></tr>
+      <tr><td>Tools</td><td>MCP-native. Skills load only descriptions; full defs on demand.</td><td>JSON-RPC app server. Tools as RPC endpoints.</td><td>MCP = standard. Integration depth varies wildly.</td></tr>
+      <tr><td>Multi-Agent</td><td>Orchestrated collaboration. Shared tasks. Sub-agents coordinate.</td><td>Isolation model. Each sandbox independent. Coordination via git.</td><td>Collaboration vs. safety trade-off.</td></tr>
     </tbody>
   </table>
-
-  <blockquote class="mt-3" style="font-size:1.2rem;">
-    "We are in the 2010 era of AI coding tools. The models look similar in benchmarks. The architectures are separating along lines that will determine what's possible in 2028."
-  </blockquote>
+  <div class="blockquote mt-2">
+    <p class="t-editorial" style="font-size:clamp(14px,1.5vw,20px);">"We are in the 2010 era of AI coding tools. The models look similar. The architectures are separating along lines that will determine what's possible in 2028."</p>
+  </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════ SLIDE 06: LOCK-IN ═══ -->
-<section class="slide" id="slide-6">
-  <div class="slide-number">06</div>
-  <div class="subtitle">Framework 01 / Harness Lock-In</div>
-  <h2 class="mb-2">Comprehension lock-in:<br>the deepest form of vendor<br>capture in enterprise history</h2>
+<!-- ═══════════════════════ 06: COMPREHENSION LOCK-IN ═══════════════════════ -->
+<section class="slide" data-slide="6" style="padding-bottom:calc(48px + 2vh);">
+  <div class="corner-mark">06</div>
+  <div class="slide-head">
+    <div class="t-label mb-1">Framework 01 // Lock-In</div>
+    <h2 class="t-headline" style="font-size:clamp(26px,3.5vw,50px);">Comprehension lock-in:<br>the deepest vendor capture<br>in enterprise history.</h2>
+  </div>
+  <div class="split split-2 flex-1 mt-1">
+    <div class="panel">
+      <div class="panel-ghost-num">A</div>
+      <h3 class="t-mono" style="font-size:12px; letter-spacing:0.15em;">Data Lock-In (Legacy)</h3>
+      <p class="t-body mt-1">Your data lives in Salesforce. Moving requires migration effort. <strong>The data is portable.</strong> Painful but possible.</p>
+      <div class="mt-2"><span class="tag">Salesforce</span> <span class="tag">SAP</span> <span class="tag">ServiceNow</span></div>
+    </div>
+    <div class="panel bg-ink">
+      <div class="panel-ghost-num">B</div>
+      <h3 class="t-mono c-signal" style="font-size:12px; letter-spacing:0.15em;">Comprehension Lock-In (Emerging)</h3>
+      <p class="t-body mt-1" style="color:var(--bone);">Your organizational <em>understanding</em> lives on the context platform -- the synthesis of how all systems relate. <strong class="c-signal">This understanding is not portable.</strong> There is no export.</p>
+      <div class="mt-2"><span class="tag tag-signal">No Natural Ceiling</span> <span class="tag" style="border-color:#444; color:#888;">Compounds Daily</span></div>
+    </div>
+  </div>
+  <div class="split split-3" style="margin-top:-4px;">
+    <div class="panel" style="background:var(--caution);">
+      <h3 class="t-mono" style="font-size:11px;">Month 1</h3>
+      <p class="t-body mt-1" style="font-size:clamp(11px,0.9vw,13px);">Smart but generic agents. A talented new hire who can read the wiki.</p>
+    </div>
+    <div class="panel" style="background:rgba(245,197,24,0.5);">
+      <h3 class="t-mono" style="font-size:11px;">Month 6</h3>
+      <p class="t-body mt-1" style="font-size:clamp(11px,0.9vw,13px);">Agents connect decisions across teams that never surface in normal human workflows.</p>
+    </div>
+    <div class="panel bg-ink">
+      <h3 class="t-mono c-signal" style="font-size:11px;">Month 12+</h3>
+      <p class="t-body mt-1" style="color:var(--bone); font-size:clamp(11px,0.9vw,13px);">Institutional knowledge layer. Switching cost: total organizational reset.</p>
+    </div>
+  </div>
+</section>
 
-  <div class="grid-2 mt-2">
-    <div class="cell">
-      <h3>Data Lock-In (Legacy)</h3>
-      <p class="mt-1">Your data lives in Salesforce. Moving it requires migration effort. <strong>The data is portable.</strong> You can export it. It's painful but possible. Switching cost: months.</p>
-      <div class="mt-2">
-        <span class="tag">Salesforce</span>
-        <span class="tag">SAP</span>
-        <span class="tag">ServiceNow</span>
+<!-- ═══════════════════════ 07: PROMPTING HIERARCHY ═══════════════════════ -->
+<section class="slide" data-slide="7">
+  <div class="corner-mark">07</div>
+  <div class="slide-head">
+    <div class="t-label mb-1">Framework 02 // Prompting Hierarchy</div>
+    <h2 class="t-headline" style="font-size:clamp(26px,3.5vw,48px);">Prompting split into four disciplines.<br>Your teams know one.</h2>
+  </div>
+
+  <div style="max-width:900px;" class="mt-1">
+    <div class="stack-row" style="background:var(--ink); color:var(--paper);">
+      <div class="stack-level-tag" style="color:var(--signal); border-color:var(--paper);">L4</div>
+      <div class="stack-content">
+        <div class="stack-name c-signal">Specification Engineering</div>
+        <div class="stack-desc" style="color:var(--bone);">Agent-executable documents across the org. Weeks/months horizon. Your entire document corpus is a specification.</div>
       </div>
     </div>
-    <div class="cell cell--dark">
-      <h3 style="color:var(--red);">Comprehension Lock-In (Emerging)</h3>
-      <p class="mt-1" style="color:#ccc;">Your organizational <em>understanding</em> lives on the context platform -- the synthesis of how Salesforce data relates to GitHub decisions relates to the board deck. <strong style="color:var(--red);">This understanding is not portable.</strong> There is no export.</p>
-      <div class="mt-2">
-        <span class="tag tag--red">No Natural Ceiling</span>
-        <span class="tag" style="border-color:#555; color:#aaa;">Compounds Daily</span>
+    <div class="stack-row">
+      <div class="stack-level-tag">L3</div>
+      <div class="stack-content">
+        <div class="stack-name">Intent Engineering</div>
+        <div class="stack-desc">Encoding organizational purpose, trade-off hierarchies, decision boundaries. Klarna: 2.3M agent conversations, wrong objective.</div>
       </div>
     </div>
-  </div>
-
-  <div class="grid-3 mt-1" style="border-top:none;">
-    <div class="cell" style="background:var(--yellow);">
-      <h3>Month 1</h3>
-      <p>Smart but generic agents. A talented new hire who can read the wiki.</p>
-    </div>
-    <div class="cell" style="background:var(--yellow); opacity:0.8;">
-      <h3>Month 6</h3>
-      <p>Agents know things no one person knows. Connecting decisions across teams that would never surface in normal human workflows.</p>
-    </div>
-    <div class="cell cell--dark">
-      <h3 style="color:var(--red);">Month 12+</h3>
-      <p style="color:#ccc;">Network of agents operating as the institutional knowledge layer. Switching cost: total organizational reset.</p>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════ SLIDE 07: PROMPTING HIERARCHY ═══ -->
-<section class="slide" id="slide-7" style="padding-top:80px;">
-  <div class="slide-number">07</div>
-  <div class="subtitle">Framework 02 / The Four-Level Prompting Hierarchy</div>
-  <h2 class="mb-2">Prompting has split into<br>four distinct disciplines.<br>Your teams know one.</h2>
-
-  <div style="max-width:900px; margin-top:2rem;">
-    <div class="stack-layer" style="background:var(--black); color:var(--white);">
-      <div class="stack-level" style="color:var(--red);">Level 4</div>
-      <div class="stack-title" style="color:var(--red);">Specification Engineering</div>
-      <div class="stack-desc" style="color:#aaa;">Agent-executable documents across the org. Time horizon: weeks/months. Your entire document corpus is a specification.</div>
-    </div>
-    <div class="stack-layer">
-      <div class="stack-level">Level 3</div>
-      <div class="stack-title">Intent Engineering</div>
-      <div class="stack-desc">Encoding organizational purpose, trade-off hierarchies, decision boundaries. Klarna's $2.3M agent disaster: perfect context, wrong intent.</div>
-    </div>
-    <div class="stack-layer">
-      <div class="stack-level">Level 2</div>
-      <div class="stack-title">Context Engineering</div>
-      <div class="stack-desc">Curating the token environment. Your 200-token prompt = 0.02% of the context window. The other 99.98% is this layer.</div>
-    </div>
-    <div class="stack-layer" style="background:rgba(0,0,0,0.03);">
-      <div class="stack-level">Level 1</div>
-      <div class="stack-title" style="opacity:0.5;">Prompt Craft</div>
-      <div class="stack-desc">Writing clear instructions. Table stakes in 2026 -- the equivalent of typing in 1998.</div>
-    </div>
-  </div>
-
-  <div class="mt-3" style="max-width:700px;">
-    <p style="font-size:0.95rem; line-height:1.5;"><strong>Critical insight:</strong> Failure severity escalates with each level. A bad prompt wastes a morning. Bad intent engineering at Level 3 damaged Klarna's customer trust for months. Bad specification engineering at Level 4 compounds across every agent in the organization.</p>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════ SLIDE 08: SPEC PRIMITIVES ═══ -->
-<section class="slide" id="slide-8" style="padding-top:80px; padding-bottom:2rem;">
-  <div class="slide-number">08</div>
-  <div class="subtitle">Framework 02 / Five Specification Primitives</div>
-  <h3 class="mb-2">The learnable building blocks of specification engineering</h3>
-
-  <div class="grid-5">
-    <div class="cell">
-      <div class="cell-number">01</div>
-      <h3>Self-Contained Problem Statements</h3>
-      <p class="mt-1">Can you state a problem with enough context that the task is plausibly solvable without the agent fetching more information?</p>
-    </div>
-    <div class="cell cell--dark">
-      <div class="cell-number" style="color:#333;">02</div>
-      <h3>Acceptance Criteria</h3>
-      <p class="mt-1" style="color:#ccc;">Three sentences an independent observer could use to verify the output without asking any questions.</p>
-    </div>
-    <div class="cell">
-      <div class="cell-number">03</div>
-      <h3>Constraint Architecture</h3>
-      <p class="mt-1">Musts, must-nots, preferences, and escalation triggers. The best claude.md files: every line earns its place.</p>
-    </div>
-    <div class="cell cell--dark">
-      <div class="cell-number" style="color:#333;">04</div>
-      <h3>Decomposition</h3>
-      <p class="mt-1" style="color:#ccc;">Subtasks under 2 hours each. Clear input/output boundaries. Independently verifiable. This is the granularity agents work best at.</p>
-    </div>
-    <div class="cell" style="background:var(--yellow);">
-      <div class="cell-number">05</div>
-      <h3>Evaluation Design</h3>
-      <p class="mt-1">3-5 test cases with known good outputs, run periodically -- especially after model updates. The only defense against regression.</p>
-    </div>
-  </div>
-
-  <blockquote class="mt-2" style="font-size:1.1rem;">
-    "A lot of what people in big companies call politics is actually bad context engineering for humans."
-    <cite>Toby Lutke, CEO Shopify -- referenced across multiple analyses</cite>
-  </blockquote>
-</section>
-
-<!-- ═══════════════════════════════════════════════ SLIDE 09: FRONTIER OPS ═══ -->
-<section class="slide" id="slide-9" style="padding-top:80px; padding-bottom:2rem;">
-  <div class="slide-number">09</div>
-  <div class="subtitle">Framework 03 / Frontier Operations</div>
-  <h2 class="mb-1">The first workforce skill<br>in history that expires<br><span class="red">quarterly.</span></h2>
-  <p class="lead" style="max-width:700px;">AI capability is an expanding bubble. The surface area -- where human judgment matters -- grows with every model release. Five simultaneous skills define who operates at that frontier.</p>
-
-  <div class="grid-5 mt-2">
-    <div class="cell" style="background:var(--black); color:var(--white);">
-      <div class="cell-number" style="color:#333;">01</div>
-      <h3 style="color:var(--red);">Boundary Sensing</h3>
-      <p class="mt-1" style="color:#ccc; font-size:0.85rem;">Maintaining accurate intuition about where the human-agent boundary sits. Updates with every model release. Calibrated in November ≠ calibrated in February.</p>
-    </div>
-    <div class="cell">
-      <div class="cell-number">02</div>
-      <h3>Seam Design</h3>
-      <p class="mt-1" style="font-size:0.85rem;">Structuring handoffs between human and agent phases. Clean, verifiable, recoverable. The seam that was right last quarter is wrong this quarter.</p>
-    </div>
-    <div class="cell" style="background:var(--black); color:var(--white);">
-      <div class="cell-number" style="color:#333;">03</div>
-      <h3 style="color:var(--yellow);">Failure Model Maintenance</h3>
-      <p class="mt-1" style="color:#ccc; font-size:0.85rem;">Not "be skeptical." Differentiated: for task type A, failure mode is X, check Y. For task type B, failure mode is Z, check W.</p>
-    </div>
-    <div class="cell">
-      <div class="cell-number">04</div>
-      <h3>Capability Forecasting</h3>
-      <p class="mt-1" style="font-size:0.85rem;">Reading the trajectory to make 6-12 month bets. Not prediction -- probabilistic positioning. Like a surfer reading swells.</p>
-    </div>
-    <div class="cell" style="background:var(--red); color:var(--white);">
-      <div class="cell-number" style="color:rgba(255,255,255,0.2);">05</div>
-      <h3>Leverage Calibration</h3>
-      <p class="mt-1" style="font-size:0.85rem;">2-5 humans supervising 50-100 agents. 8 hours, 100 output streams. The skill is triaging your own attention in real time.</p>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════ SLIDE 10: TEAM STRUCTURES ═══ -->
-<section class="slide" id="slide-10">
-  <div class="slide-number">10</div>
-  <div class="subtitle">Framework 03 / Organizational Design</div>
-  <h2 class="mb-2">Output scales with leverage,<br>not headcount.</h2>
-
-  <div class="grid-2 mt-2">
-    <div class="cell">
-      <h3>Team of One</h3>
-      <p class="mt-1">A single frontier operator running multiple agent workflows across a domain. Does boundary sensing, seam design, failure model maintenance, and leverage calibration solo.</p>
-      <div class="mt-2" style="font-size:2.5rem; font-weight:900; color:var(--red);">1 = 5-10</div>
-      <p style="font-size:0.85rem; color:var(--gray);">Output equivalent to a 5-10 person pre-agent team</p>
-      <div class="mt-1">
-        <span class="tag tag--green">High talent bar</span>
-        <span class="tag">Tight feedback loops</span>
+    <div class="stack-row">
+      <div class="stack-level-tag">L2</div>
+      <div class="stack-content">
+        <div class="stack-name">Context Engineering</div>
+        <div class="stack-desc">Curating the token environment. Your 200-token prompt = 0.02% of the context window. The other 99.98% is this layer.</div>
       </div>
     </div>
-    <div class="cell cell--dark">
-      <h3>Team of Five (Pod)</h3>
-      <p class="mt-1" style="color:#ccc;">One frontier operator sets seams + maintains failure models. 2-3 developing practitioners execute within structures. One domain specialist with irreplaceable expertise.</p>
-      <div class="mt-2" style="font-size:2.5rem; font-weight:900; color:var(--yellow);">5 = 20</div>
-      <p style="font-size:0.85rem; color:#aaa;">Output equivalent to a 20-person pre-agent team</p>
-      <div class="mt-1">
-        <span class="tag" style="border-color:var(--yellow); color:var(--yellow);">Surgical team model</span>
-        <span class="tag" style="border-color:#555; color:#aaa;">Complementary skills</span>
+    <div class="stack-row" style="opacity:0.5;">
+      <div class="stack-level-tag">L1</div>
+      <div class="stack-content">
+        <div class="stack-name">Prompt Craft</div>
+        <div class="stack-desc">Table stakes. The equivalent of typing in 1998.</div>
       </div>
     </div>
   </div>
 
+  <p class="t-body mt-2 max-w-700"><strong>Failure escalation:</strong> A bad prompt wastes a morning. Bad intent engineering (L3) damaged Klarna's customer trust for months. Bad specification engineering (L4) compounds across every agent in the organization.</p>
+</section>
+
+<!-- ═══════════════════════ 08: SPEC PRIMITIVES ═══════════════════════ -->
+<section class="slide" data-slide="8" style="padding-bottom:calc(48px + 2vh);">
+  <div class="corner-mark">08</div>
+  <div class="slide-head">
+    <div class="t-label mb-1">Framework 02 // Primitives</div>
+    <h2 class="t-headline" style="font-size:clamp(24px,3vw,42px);">Five learnable building blocks<br>of specification engineering</h2>
+  </div>
+  <div class="split split-5 flex-1 mt-1">
+    <div class="panel">
+      <div class="panel-ghost-num">01</div>
+      <h3 class="t-mono" style="font-size:10px;">Self-Contained<br>Problem Statements</h3>
+      <p class="t-body mt-1" style="font-size:clamp(10px,0.8vw,12px);">Can you state a problem with enough context that no agent needs to fetch more information?</p>
+    </div>
+    <div class="panel bg-ink">
+      <div class="panel-ghost-num">02</div>
+      <h3 class="t-mono" style="font-size:10px; color:var(--paper);">Acceptance<br>Criteria</h3>
+      <p class="t-body mt-1" style="font-size:clamp(10px,0.8vw,12px); color:var(--bone);">Three sentences an independent observer could use to verify the output without asking questions.</p>
+    </div>
+    <div class="panel">
+      <div class="panel-ghost-num">03</div>
+      <h3 class="t-mono" style="font-size:10px;">Constraint<br>Architecture</h3>
+      <p class="t-body mt-1" style="font-size:clamp(10px,0.8vw,12px);">Musts, must-nots, preferences, and escalation triggers.</p>
+    </div>
+    <div class="panel bg-ink">
+      <div class="panel-ghost-num">04</div>
+      <h3 class="t-mono" style="font-size:10px; color:var(--paper);">Decomposition</h3>
+      <p class="t-body mt-1" style="font-size:clamp(10px,0.8vw,12px); color:var(--bone);">Subtasks &lt;2hrs each. Clear I/O boundaries. Independently verifiable.</p>
+    </div>
+    <div class="panel" style="background:var(--caution);">
+      <div class="panel-ghost-num">05</div>
+      <h3 class="t-mono" style="font-size:10px;">Evaluation<br>Design</h3>
+      <p class="t-body mt-1" style="font-size:clamp(10px,0.8vw,12px);">3-5 test cases with known good outputs. Run after every model update.</p>
+    </div>
+  </div>
+  <div class="blockquote mt-2">
+    <p class="t-editorial" style="font-size:clamp(13px,1.3vw,18px);">"A lot of what people in big companies call politics is actually bad context engineering for humans." <span class="t-label" style="display:inline;">-- Toby Lutke, CEO Shopify</span></p>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 09: FRONTIER OPS ═══════════════════════ -->
+<section class="slide" data-slide="9" style="padding-bottom:calc(48px + 2vh);">
+  <div class="corner-mark">09</div>
+  <div class="slide-head">
+    <div class="t-label mb-1">Framework 03 // Frontier Operations</div>
+    <h2 class="t-headline" style="font-size:clamp(26px,3.5vw,48px);">The first workforce skill<br>that expires <span class="c-signal">quarterly.</span></h2>
+  </div>
+  <div class="split split-5 flex-1 mt-1">
+    <div class="panel bg-ink">
+      <div class="panel-ghost-num">01</div>
+      <h3 class="t-mono c-signal" style="font-size:10px;">Boundary<br>Sensing</h3>
+      <p class="t-body mt-1" style="font-size:clamp(10px,0.8vw,12px); color:var(--bone);">Accurate intuition about where the human-agent boundary sits. Updates every model release.</p>
+    </div>
+    <div class="panel">
+      <div class="panel-ghost-num">02</div>
+      <h3 class="t-mono" style="font-size:10px;">Seam<br>Design</h3>
+      <p class="t-body mt-1" style="font-size:clamp(10px,0.8vw,12px);">Structuring clean, verifiable, recoverable handoffs between human and agent phases.</p>
+    </div>
+    <div class="panel bg-ink">
+      <div class="panel-ghost-num">03</div>
+      <h3 class="t-mono" style="font-size:10px; color:var(--caution);">Failure Model<br>Maintenance</h3>
+      <p class="t-body mt-1" style="font-size:clamp(10px,0.8vw,12px); color:var(--bone);">Differentiated: task A fails via X, check Y. Not generic skepticism.</p>
+    </div>
+    <div class="panel">
+      <div class="panel-ghost-num">04</div>
+      <h3 class="t-mono" style="font-size:10px;">Capability<br>Forecasting</h3>
+      <p class="t-body mt-1" style="font-size:clamp(10px,0.8vw,12px);">6-12 month probabilistic positioning. Like a surfer reading swells.</p>
+    </div>
+    <div class="panel bg-signal">
+      <div class="panel-ghost-num" style="color:rgba(255,255,255,0.1);">05</div>
+      <h3 class="t-mono" style="font-size:10px; color:var(--paper);">Leverage<br>Calibration</h3>
+      <p class="t-body mt-1" style="font-size:clamp(10px,0.8vw,12px); color:rgba(255,255,255,0.85);">2-5 humans overseeing 50-100 agents. Triaging your own attention in real time.</p>
+    </div>
+  </div>
+  <p class="t-body mt-2 max-w-800">These are not sequential. They are five simultaneous, integrated, continuous operations -- like driving involves steering, speed, route awareness, and hazard perception <em>at the same time</em>.</p>
+</section>
+
+<!-- ═══════════════════════ 10: TEAM STRUCTURES ═══════════════════════ -->
+<section class="slide" data-slide="10">
+  <div class="corner-mark">10</div>
+  <div class="slide-head">
+    <div class="t-label mb-1">Framework 03 // Org Design</div>
+    <h2 class="t-headline" style="font-size:clamp(26px,3.5vw,48px);">Output scales with leverage,<br>not headcount.</h2>
+  </div>
+  <div class="split split-2 mt-1" style="flex:1;">
+    <div class="panel">
+      <div class="panel-ghost-num">A</div>
+      <h3 class="t-mono" style="font-size:12px;">Team of One</h3>
+      <p class="t-body mt-1">Single frontier operator running multiple agent workflows across a domain. Boundary sensing + seam design + failure models + leverage calibration -- solo.</p>
+      <div class="stat-val c-signal mt-2">1 = 5-10</div>
+      <div class="t-label mt-1">Output equivalent to pre-agent team</div>
+    </div>
+    <div class="panel bg-ink">
+      <div class="panel-ghost-num">B</div>
+      <h3 class="t-mono" style="font-size:12px; color:var(--paper);">Team of Five (Pod)</h3>
+      <p class="t-body mt-1" style="color:var(--bone);">One frontier operator sets seams + maintains failure models. 2-3 developing practitioners execute. One domain specialist with irreplaceable expertise.</p>
+      <div class="stat-val mt-2" style="color:var(--caution);">5 = 20</div>
+      <div class="t-label mt-1" style="color:#888;">Surgical team model</div>
+    </div>
+  </div>
   <div class="mt-2 max-w-800">
-    <h3>Hiring Signal Shift</h3>
-    <p class="mt-1" style="font-size:0.95rem; line-height:1.5;"><strong>Stop asking:</strong> credentials, years of experience, tool proficiency.<br><strong>Start asking:</strong> Can you articulate where agents fail in your domain today? When encountering a new capability, do you immediately redesign a workflow? Do you maintain a differentiated failure model?</p>
+    <h3 class="t-mono" style="font-size:11px;">Hiring signal shift</h3>
+    <p class="t-body mt-1"><strong>Stop asking:</strong> credentials, years, tool proficiency. <strong>Start asking:</strong> Where do agents fail in your domain? When you see a new capability, do you immediately redesign a workflow?</p>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════ SLIDE 11: CAP-DISSIPATION GAP ═══ -->
-<section class="slide" id="slide-11" style="background:var(--black); color:var(--white);">
-  <div class="slide-number" style="color:rgba(255,255,255,0.05);">11</div>
-  <div class="subtitle" style="color:var(--red);">Framework 04 / The Capability-Dissipation Gap</div>
-  <h2 style="color:var(--white);" class="mb-2">The bears and the bulls<br>are both wrong<br>about the speed.</h2>
-
-  <div class="diagram" style="max-width:700px;">
+<!-- ═══════════════════════ 11: CAP-DISSIPATION ═══════════════════════ -->
+<section class="slide bg-ink" data-slide="11">
+  <div class="corner-mark">11</div>
+  <div class="slide-head">
+    <div class="t-label c-signal mb-1">Framework 04 // Capability-Dissipation Gap</div>
+    <h2 class="t-headline" style="color:var(--paper); font-size:clamp(26px,3.5vw,48px);">The bears and the bulls<br>are both wrong about<br>the speed.</h2>
+  </div>
+  <div class="split split-32 mt-1" style="flex:1;">
+    <div class="panel" style="border-color:#333;">
+      <div class="terminal" style="border:none; padding:0; font-size:clamp(10px,0.8vw,13px);">
  VALUE
   |
   |     / AI Capability (exponential)
   |    /
   |   /
-  |  /    <-- THE GAP
+  |  /    &lt;-- THE GAP
   | /        Your competitive advantage
   |/         lives here.
   |  ______________________________
   | /   Societal Dissipation (flat)
   |/
-  +--------------------------------- TIME
-
-  Bears: gap closes fast (mass layoffs)
-  Bulls: gap closes fast (mass adoption)
-  Reality: gap stays wide. Advantage compounds.
-  </div>
-
-  <div class="grid-4 mt-2">
-    <div class="cell" style="border-color:#333;">
-      <h3 style="color:var(--red);">Regulatory Inertia</h3>
-      <p style="color:#aaa; font-size:0.85rem;">COBOL runs 95% of US ATM transactions. Regulators haven't written the rules yet.</p>
+  +-------------------------------- TIME
+      </div>
     </div>
-    <div class="cell" style="border-color:#333;">
-      <h3 style="color:var(--yellow);">Organizational Inertia</h3>
-      <p style="color:#aaa; font-size:0.85rem;">18 months from "this tool saves $10M" to actually saving the money.</p>
-    </div>
-    <div class="cell" style="border-color:#333;">
-      <h3 style="color:var(--green);">Cultural Inertia</h3>
-      <p style="color:#aaa; font-size:0.85rem;">Toby Lutke had to mandate AI into performance reviews at Shopify. Multiply by a million firms.</p>
-    </div>
-    <div class="cell" style="border-color:#333;">
-      <h3 style="color:var(--blue);">Trust Inertia</h3>
-      <p style="color:#aaa; font-size:0.85rem;">Verification systems, audit trails, institutional trust. No benchmark improvement compresses this.</p>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════ SLIDE 12: ENTERPRISE CONTEXT ═══ -->
-<section class="slide" id="slide-12" style="padding-top:80px; padding-bottom:2rem;">
-  <div class="slide-number">12</div>
-  <div class="subtitle">Framework 05 / The Four Compound Bets</div>
-  <h2 class="mb-1">The company that owns<br>the synthesis layer owns<br>the enterprise.</h2>
-  <p class="lead">Four capabilities must work together. Failure of any one causes the entire multi-hundred-billion-dollar bet to collapse.</p>
-
-  <div class="grid-2 mt-2">
-    <div class="cell">
-      <div class="cell-number">01</div>
-      <h3>Intelligence x Context</h3>
-      <p class="mt-1">Reasoning determines how much context can be productively used. The relationship is <strong>multiplicative, not additive.</strong> If reasoning plateaus, the context layer degrades from institutional memory to an expensive RAG pipeline that hallucinates organizational knowledge.</p>
-    </div>
-    <div class="cell cell--dark">
-      <div class="cell-number" style="color:#333;">02</div>
-      <h3>Memory That Doesn't Rot</h3>
-      <p class="mt-1" style="color:#ccc;">Must maintain, resolve contradictions, deprecate stale knowledge, track current vs. superseded vs. historical-but-relevant. <strong style="color:var(--red);">This is an open research question</strong>, not an engineering problem with a known solution.</p>
-    </div>
-    <div class="cell cell--dark">
-      <div class="cell-number" style="color:#333;">03</div>
-      <h3 style="color:var(--red);">Retrieval at Scale</h3>
-      <p class="mt-1" style="color:#ccc;">Finding 2,000 relevant tokens in 10 trillion. Relevance defined by causal chains across 8 months. <strong style="color:var(--yellow);">Current RAG cannot solve this.</strong> Requires hybrid: structured indexing, temporal tracking, hierarchical memory.</p>
-    </div>
-    <div class="cell">
-      <div class="cell-number">04</div>
-      <h3>Execution at Speed of Trust</h3>
-      <p class="mt-1">5% per-task failure rate compounds into systemic risk. Target: <strong>99.5%+ accuracy</strong> sustained across diverse tasks including ambiguous, contradictory, or incomplete organizational context.</p>
-    </div>
-  </div>
-
-  <div class="mt-2 max-w-800">
-    <div class="flex-between">
-      <div>
-        <span class="tag tag--blue">OpenAI</span>
-        <span style="font-size:0.9rem;">Top-down. $600B+ infrastructure. Stateful runtime with AWS.</span>
+    <div class="panel flex-col gap-1" style="border-color:#333;">
+      <div style="border-bottom:1px solid #333; padding-bottom:clamp(6px,1vh,12px);">
+        <div class="t-mono c-signal" style="font-size:10px;">Regulatory Inertia</div>
+        <p class="t-body mt-1" style="color:var(--bone); font-size:clamp(10px,0.8vw,12px);">COBOL runs 95% of US ATM transactions. Regulators haven't written the rules.</p>
+      </div>
+      <div style="border-bottom:1px solid #333; padding-bottom:clamp(6px,1vh,12px);">
+        <div class="t-mono" style="font-size:10px; color:var(--caution);">Organizational Inertia</div>
+        <p class="t-body mt-1" style="color:var(--bone); font-size:clamp(10px,0.8vw,12px);">18 months from "saves $10M/yr" to actually saving money.</p>
+      </div>
+      <div style="border-bottom:1px solid #333; padding-bottom:clamp(6px,1vh,12px);">
+        <div class="t-mono c-terminal" style="font-size:10px;">Cultural Inertia</div>
+        <p class="t-body mt-1" style="color:var(--bone); font-size:clamp(10px,0.8vw,12px);">Shopify's Toby Lutke mandated AI into performance reviews. Multiply by 1M firms.</p>
       </div>
       <div>
-        <span class="tag tag--green">Anthropic</span>
-        <span style="font-size:0.9rem;">Bottom-up. Organic context from 50%+ enterprise coding market.</span>
+        <div class="t-mono" style="font-size:10px; color:var(--cold);">Trust Inertia</div>
+        <p class="t-body mt-1" style="color:var(--bone); font-size:clamp(10px,0.8vw,12px);">Verification, audit trails, institutional trust. No benchmark compresses this.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════ SLIDE 13: MEMORY ARCHITECTURE ═══ -->
-<section class="slide" id="slide-13">
-  <div class="slide-number">13</div>
-  <div class="subtitle">Framework 06 / Open Brain Architecture</div>
-  <h2 class="mb-2">Your organizational memory<br>is five piles of sticky notes<br>on five separate desks.</h2>
+<!-- ═══════════════════════ 12: FOUR COMPOUND BETS ═══════════════════════ -->
+<section class="slide" data-slide="12" style="padding-bottom:calc(48px + 2vh);">
+  <div class="corner-mark">12</div>
+  <div class="slide-head">
+    <div class="t-label mb-1">Framework 05 // Enterprise Context Platform</div>
+    <h2 class="t-headline" style="font-size:clamp(24px,3vw,42px);">The company that owns the synthesis layer<br>owns the enterprise. Four bets must all hit.</h2>
+  </div>
+  <div class="split split-2 flex-1 mt-1">
+    <div class="panel">
+      <div class="panel-ghost-num">01</div>
+      <h3 class="t-mono" style="font-size:11px;">Intelligence x Context</h3>
+      <p class="t-body mt-1" style="font-size:clamp(11px,0.85vw,13px);">Multiplicative, not additive. If reasoning plateaus, context degrades from institutional memory to an expensive RAG pipeline that hallucinates organizational knowledge.</p>
+    </div>
+    <div class="panel bg-ink">
+      <div class="panel-ghost-num">02</div>
+      <h3 class="t-mono c-signal" style="font-size:11px;">Memory That Doesn't Rot</h3>
+      <p class="t-body mt-1" style="font-size:clamp(11px,0.85vw,13px); color:var(--bone);">Must resolve contradictions, deprecate stale knowledge, track current vs. superseded. <strong class="c-signal">Open research question</strong>, not a solved engineering problem.</p>
+    </div>
+    <div class="panel bg-ink">
+      <div class="panel-ghost-num">03</div>
+      <h3 class="t-mono" style="font-size:11px; color:var(--caution);">Retrieval at Scale</h3>
+      <p class="t-body mt-1" style="font-size:clamp(11px,0.85vw,13px); color:var(--bone);">Find 2,000 tokens in 10 trillion. Relevance = causal chains across 8 months. <strong style="color:var(--caution);">Current RAG cannot solve this.</strong></p>
+    </div>
+    <div class="panel">
+      <div class="panel-ghost-num">04</div>
+      <h3 class="t-mono" style="font-size:11px;">Execution at Speed of Trust</h3>
+      <p class="t-body mt-1" style="font-size:clamp(11px,0.85vw,13px);">5% per-task failure compounds into systemic risk. Target: <strong>99.5%+</strong> sustained across diverse, ambiguous, contradictory context.</p>
+    </div>
+  </div>
+</section>
 
-  <div class="grid-2 mt-2">
-    <div class="cell">
-      <h3>The Problem</h3>
-      <ul class="action-list" style="margin-top:1rem;">
+<!-- ═══════════════════════ 13: MEMORY ARCHITECTURE ═══════════════════════ -->
+<section class="slide" data-slide="13">
+  <div class="corner-mark">13</div>
+  <div class="slide-head">
+    <div class="t-label mb-1">Framework 06 // Open Brain Architecture</div>
+    <h2 class="t-headline" style="font-size:clamp(24px,3.2vw,44px);">Your org memory is five piles<br>of sticky notes on five<br>separate desks.</h2>
+  </div>
+  <div class="split split-23 mt-1" style="flex:1;">
+    <div class="panel flex-col" style="justify-content:flex-start;">
+      <h3 class="t-mono" style="font-size:11px;">The Problem</h3>
+      <ul class="action-list mt-1">
         <li>Claude's memory doesn't know what you told ChatGPT</li>
-        <li>ChatGPT's memory doesn't follow you into Cursor</li>
+        <li>ChatGPT doesn't follow you into Cursor</li>
         <li>Each platform's memory is a lock-in mechanism by design</li>
-        <li>None of these memories are agent-readable across tools</li>
+        <li>None are agent-readable across tools</li>
       </ul>
     </div>
-    <div class="cell cell--dark">
-      <h3 style="color:var(--green);">The Architecture</h3>
-      <div class="diagram" style="font-size:0.75rem; margin-top:1rem; background:transparent; border:none; padding:0; color:var(--green);">
-  CAPTURE (any tool)
-       |
-  Edge Function --> PostgreSQL + pgvector
-       |                    |
-  Vector Embedding    Metadata Extract
-       |                    |
-       +---- MCP Server ----+
-             |     |     |
-          Claude  GPT  Cursor
+    <div class="panel bg-terminal" style="justify-content:flex-start;">
+      <h3 class="t-mono" style="font-size:11px; color:var(--terminal);">The Architecture</h3>
+      <div class="terminal mt-1" style="border:none; padding:0; background:transparent; font-size:clamp(10px,0.75vw,12px);">
+  CAPTURE (any tool: Slack, CLI, mobile)
+       │
+  Edge Function ──▶ PostgreSQL + pgvector
+       │                      │
+  Vector Embedding      Metadata Extract
+  (semantic meaning)    (people, topics)
+       │                      │
+       └────── MCP Server ────┘
+                │     │     │
+             Claude  GPT  Cursor
+          (any MCP-compatible client)
+
+  COST: $0.10 - $0.30 / month
       </div>
-      <p style="color:#aaa; font-size:0.85rem; margin-top:1rem;">One brain. Every AI. Persistent memory that never starts from zero. Cost: $0.10-0.30/month.</p>
     </div>
   </div>
-
-  <div class="mt-2 max-w-800">
-    <h3>Enterprise Implication</h3>
-    <p class="mt-1" style="font-size:0.95rem; line-height:1.5;">The internet is forking into a <strong>human web</strong> (fonts, layouts, reading) and an <strong>agent web</strong> (APIs, structured data, machine-to-machine). Your organizational knowledge must exist on both. Building for the agent web gives you downstream human benefits: any new AI tool plugs in without additional effort.</p>
-  </div>
+  <p class="t-body mt-2 max-w-800">The internet is forking: <strong>human web</strong> (fonts, layouts) and <strong>agent web</strong> (APIs, structured data). Your knowledge must exist on both. Build for the agent web; human benefits follow.</p>
 </section>
 
-<!-- ═══════════════════════════════════════════════ SLIDE 14: MODEL EVAL ═══ -->
-<section class="slide" id="slide-14" style="padding-top:80px; padding-bottom:2rem;">
-  <div class="slide-number">14</div>
-  <div class="subtitle">Evidence Base / Blind Model Evaluations</div>
-  <h2 class="mb-2">Infrastructure without<br>judgment is the failure<br>mode of this era.</h2>
-
-  <table class="compare-table">
+<!-- ═══════════════════════ 14: MODEL EVAL ═══════════════════════ -->
+<section class="slide" data-slide="14" style="padding-bottom:calc(48px + 2vh);">
+  <div class="corner-mark">14</div>
+  <div class="slide-head">
+    <div class="t-label mb-1">Evidence Base // Blind Evaluations</div>
+    <h2 class="t-headline" style="font-size:clamp(24px,3vw,42px);">Infrastructure without judgment<br>is the failure mode of this era.</h2>
+  </div>
+  <table class="data-table mt-1" style="font-size:clamp(10px,0.8vw,13px);">
     <thead>
-      <tr>
-        <th>Evaluation</th>
-        <th>GPT-5.4</th>
-        <th>Claude Opus 4.6</th>
-        <th>Gemini 3.1 Pro</th>
-      </tr>
+      <tr><th>Evaluation</th><th>GPT-5.4</th><th>Claude Opus 4.6</th><th>Gemini 3.1 Pro</th></tr>
     </thead>
     <tbody>
-      <tr>
-        <td>Writing Quality</td>
-        <td>Better than 5.2. Still loses.</td>
-        <td style="background:rgba(0,230,118,0.1);"><strong>Winner.</strong> Voice, tone, business communication.</td>
-        <td>Fabricated sources in verbal creativity test.</td>
-      </tr>
-      <tr>
-        <td>File Discovery</td>
-        <td style="background:rgba(0,230,118,0.1);"><strong>99.1%</strong> (461/465 files)</td>
-        <td>75% (missed Excel -- chose not to install openpyxl)</td>
-        <td>Struggled with range and difficulty.</td>
-      </tr>
-      <tr>
-        <td>Data Judgment</td>
-        <td style="background:rgba(255,45,45,0.1);"><strong>Failed.</strong> Mickey Mouse in production DB. 278 customers (correct: 176).</td>
-        <td>194 customers (closer). 19 actionable flags.</td>
-        <td>N/A</td>
-      </tr>
-      <tr>
-        <td>Speed (Schema Migration)</td>
-        <td>56 minutes</td>
-        <td style="background:rgba(0,230,118,0.1);"><strong>15 minutes</strong></td>
-        <td>21 minutes</td>
-      </tr>
-      <tr>
-        <td>Thinking vs. Auto Mode</td>
-        <td style="background:rgba(255,45,45,0.1);"><strong>Chasm.</strong> Thinking = 1st place. Auto = dead last.</td>
-        <td>Consistent across modes.</td>
-        <td>Consistent across modes.</td>
-      </tr>
-      <tr>
-        <td>Quantitative Modeling</td>
-        <td style="background:rgba(0,230,118,0.1);"><strong>Winner.</strong> 6-tab workbook. Honest self-critique.</td>
-        <td>Cleaner formatting, simpler model.</td>
-        <td>N/A</td>
-      </tr>
+      <tr><td>Writing</td><td>Better than 5.2. Still loses.</td><td class="cell-win"><strong>Winner.</strong> Voice, tone, business.</td><td>Fabricated sources.</td></tr>
+      <tr><td>File Discovery</td><td class="cell-win"><strong>99.1%</strong> (461/465)</td><td>75% (skipped Excel)</td><td>Struggled broadly.</td></tr>
+      <tr><td>Data Judgment</td><td class="cell-fail"><strong>Failed.</strong> Mickey Mouse in prod DB.</td><td>19 actionable flags.</td><td>--</td></tr>
+      <tr><td>Speed</td><td>56 min</td><td class="cell-win"><strong>15 min</strong></td><td>21 min</td></tr>
+      <tr><td>Think vs. Auto</td><td class="cell-fail"><strong>Chasm.</strong> Think=1st. Auto=last.</td><td>Consistent.</td><td>Consistent.</td></tr>
+      <tr><td>Quant Modeling</td><td class="cell-win"><strong>Winner.</strong> 6-tab workbook.</td><td>Cleaner, simpler.</td><td>--</td></tr>
     </tbody>
   </table>
-
-  <blockquote class="mt-2" style="font-size:1.1rem;">
-    "ChatGPT 5.4 treats tasks as pipelines to execute, not problems to understand. It will build you a beautiful complete system but will not stop to ask why."
-  </blockquote>
+  <div class="blockquote mt-2">
+    <p class="t-editorial" style="font-size:clamp(13px,1.3vw,18px);">"GPT-5.4 treats tasks as pipelines to execute, not problems to understand. It will build a beautiful system but won't ask why."</p>
+  </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════ SLIDE 15: MATURITY MODEL ═══ -->
-<section class="slide" id="slide-15" style="padding-top:80px;">
-  <div class="slide-number">15</div>
-  <div class="subtitle">Consulting Framework / Enterprise Agentic AI Maturity Model</div>
-  <h2 class="mb-2">Where does your<br>organization sit?</h2>
+<!-- ═══════════════════════ 15: MATURITY MODEL ═══════════════════════ -->
+<section class="slide" data-slide="15" style="padding-bottom:calc(48px + 2vh);">
+  <div class="corner-mark">15</div>
+  <div class="slide-head">
+    <div class="t-label mb-1">Consulting Framework // Maturity Model</div>
+    <h2 class="t-headline" style="font-size:clamp(24px,3.2vw,44px);">Enterprise Agentic AI<br>Maturity Assessment</h2>
+  </div>
 
-  <div class="maturity-bar">
-    <div class="maturity-segment" style="background:rgba(255,45,45,0.1);">
-      Chatbot Users
-      <span class="maturity-label">Level 0</span>
+  <div class="maturity-track mt-1">
+    <div class="maturity-cell" style="background:rgba(230,35,46,0.08);">Chatbot<br>Users<span class="m-label">L0</span></div>
+    <div class="maturity-cell" style="background:rgba(230,35,46,0.14);">Prompt<br>Crafters<span class="m-label">L1</span></div>
+    <div class="maturity-cell" style="background:rgba(245,197,24,0.15);">Context<br>Engineers<span class="m-label">L2</span></div>
+    <div class="maturity-cell" style="background:rgba(245,197,24,0.28);">Intent<br>Architects<span class="m-label">L3</span></div>
+    <div class="maturity-cell" style="background:rgba(0,255,136,0.12);">Spec<br>Engineers<span class="m-label">L4</span></div>
+    <div class="maturity-cell" style="background:rgba(0,255,136,0.25);">Frontier<br>Operators<span class="m-label">L5</span></div>
+  </div>
+
+  <div class="split split-3 mt-1">
+    <div class="panel" style="background:rgba(230,35,46,0.04);">
+      <h3 class="t-mono c-signal" style="font-size:10px;">L0-1: Exposed</h3>
+      <p class="t-body mt-1" style="font-size:clamp(10px,0.85vw,12px);">Chat-only. No context infra. No harness decision. Competitors at L3+ produce 10x output. <strong>90% of Fortune 500 teams sit here.</strong></p>
     </div>
-    <div class="maturity-segment" style="background:rgba(255,45,45,0.15);">
-      Prompt Crafters
-      <span class="maturity-label">Level 1</span>
+    <div class="panel" style="background:rgba(245,197,24,0.06);">
+      <h3 class="t-mono" style="font-size:10px; color:#b89600;">L2-3: Transitioning</h3>
+      <p class="t-body mt-1" style="font-size:clamp(10px,0.85vw,12px);">Building claude.md files. Piloting agents. Need to formalize harness decisions and invest in spec engineering. <strong>This is where ROI accelerates.</strong></p>
     </div>
-    <div class="maturity-segment" style="background:rgba(255,225,77,0.2);">
-      Context Engineers
-      <span class="maturity-label">Level 2</span>
-    </div>
-    <div class="maturity-segment" style="background:rgba(255,225,77,0.35);">
-      Intent Architects
-      <span class="maturity-label">Level 3</span>
-    </div>
-    <div class="maturity-segment" style="background:rgba(0,230,118,0.2);">
-      Spec Engineers
-      <span class="maturity-label">Level 4</span>
-    </div>
-    <div class="maturity-segment" style="background:rgba(0,230,118,0.4);">
-      Frontier Operators
-      <span class="maturity-label">Level 5</span>
+    <div class="panel" style="background:rgba(0,255,136,0.05);">
+      <h3 class="t-mono c-terminal" style="font-size:10px;">L4-5: Frontier</h3>
+      <p class="t-body mt-1" style="font-size:clamp(10px,0.85vw,12px);">Spec-driven orchestration. Dedicated frontier operators. Teams of 5 = output of 20. <strong>&lt;1% of enterprises. The gap compounds.</strong></p>
     </div>
   </div>
 
-  <div class="grid-3 mt-1">
-    <div class="risk-cell" style="background:rgba(255,45,45,0.05);">
-      <h4 style="color:var(--red);">Levels 0-1: Exposed</h4>
-      <p>Using AI as a chat partner. No context infrastructure. No agent strategy. No harness decision. Competitors at Level 3+ are producing 10x output with smaller teams. <strong>90% of Fortune 500 teams are here.</strong></p>
+  <div class="split split-4 mt-1">
+    <div class="panel" style="padding:clamp(8px,1vh,14px) clamp(10px,1vw,16px);">
+      <div class="t-label" style="font-size:9px;">Assessment 1</div>
+      <p class="t-body mt-1" style="font-size:clamp(10px,0.8vw,12px);"><strong>Harness Strategy:</strong> Procurement or architecture?</p>
     </div>
-    <div class="risk-cell" style="background:rgba(255,225,77,0.08);">
-      <h4 style="color:#c5a800;">Levels 2-3: Transitioning</h4>
-      <p>Building claude.md files. Starting to think about intent. Piloting agent workflows. Need to formalize harness decisions, build frontier operations roles, and invest in specification engineering. <strong>This is where ROI accelerates.</strong></p>
+    <div class="panel" style="padding:clamp(8px,1vh,14px) clamp(10px,1vw,16px);">
+      <div class="t-label" style="font-size:9px;">Assessment 2</div>
+      <p class="t-body mt-1" style="font-size:clamp(10px,0.8vw,12px);"><strong>Context Infra:</strong> Is knowledge agent-readable across tools?</p>
     </div>
-    <div class="risk-cell" style="background:rgba(0,230,118,0.08);">
-      <h4 style="color:#00b862;">Levels 4-5: Operating at the Frontier</h4>
-      <p>Specification-driven agent orchestration. Dedicated frontier operators. Compounding context infrastructure. Teams of 5 producing output of 20. <strong>Less than 1% of enterprises. This is where the gap compounds.</strong></p>
+    <div class="panel" style="padding:clamp(8px,1vh,14px) clamp(10px,1vw,16px);">
+      <div class="t-label" style="font-size:9px;">Assessment 3</div>
+      <p class="t-body mt-1" style="font-size:clamp(10px,0.8vw,12px);"><strong>Frontier Roles:</strong> Can you name who tracks the boundary?</p>
     </div>
-  </div>
-
-  <div class="mt-2 max-w-1000">
-    <h3 class="mb-1">Assessment Dimensions</h3>
-    <div class="grid-4">
-      <div class="cell" style="padding:1rem;">
-        <h3 style="font-size:0.7rem;">Harness Strategy</h3>
-        <p style="font-size:0.8rem;">Is the harness decision treated as procurement or architecture?</p>
-      </div>
-      <div class="cell" style="padding:1rem;">
-        <h3 style="font-size:0.7rem;">Context Infrastructure</h3>
-        <p style="font-size:0.8rem;">Is organizational knowledge agent-readable across tools?</p>
-      </div>
-      <div class="cell" style="padding:1rem;">
-        <h3 style="font-size:0.7rem;">Frontier Operations Roles</h3>
-        <p style="font-size:0.8rem;">Can you name the person who tracks the human-agent boundary?</p>
-      </div>
-      <div class="cell" style="padding:1rem;">
-        <h3 style="font-size:0.7rem;">Specification Maturity</h3>
-        <p style="font-size:0.8rem;">Can agents execute against your documents for days without intervention?</p>
-      </div>
+    <div class="panel" style="padding:clamp(8px,1vh,14px) clamp(10px,1vw,16px);">
+      <div class="t-label" style="font-size:9px;">Assessment 4</div>
+      <p class="t-body mt-1" style="font-size:clamp(10px,0.8vw,12px);"><strong>Spec Maturity:</strong> Can agents run on your docs for days?</p>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════ SLIDE 16: ACTION PLAN ═══ -->
-<section class="slide" id="slide-16" style="padding-top:80px; padding-bottom:4rem;">
-  <div class="slide-number">16</div>
-  <div class="subtitle">Engagement Framework / 90-Day Action Plan</div>
-  <h2 class="mb-2">Three questions.<br>Five actions.<br>One decision that<br>compounds every quarter.</h2>
-
-  <div class="grid-2 mt-2">
-    <div>
-      <h3 class="mb-1" style="color:var(--red);">Three Strategic Questions for the C-Suite</h3>
-      <ol class="action-list">
-        <li><strong>Where is your understanding accumulating?</strong> If engineering uses Claude, product uses ChatGPT, and analytics uses Gemini, you're building separate context silos, not shared organizational intelligence.</li>
-        <li><strong>Are you running a flywheel?</strong> Is there compound improvement in your AI systems -- or are people just trying things? Is retrieval getting better? Is execution getting more reliable?</li>
-        <li><strong>What is your understanding switching cost?</strong> If you've built 20-30% of a context layer internally, at what point would you switch to an enterprise offering? How portable is it?</li>
+<!-- ═══════════════════════ 16: ACTION PLAN ═══════════════════════ -->
+<section class="slide" data-slide="16" style="padding-bottom:calc(48px + 2vh);">
+  <div class="corner-mark">16</div>
+  <div class="slide-head">
+    <div class="t-label mb-1">Engagement // 90-Day Plan</div>
+    <h2 class="t-headline" style="font-size:clamp(24px,3.2vw,44px);">Three questions. Five actions.<br>One decision that compounds<br>every quarter.</h2>
+  </div>
+  <div class="split split-2 flex-1 mt-1">
+    <div class="panel" style="justify-content:flex-start;">
+      <h3 class="t-mono c-signal" style="font-size:11px;">Three C-Suite Questions</h3>
+      <ol class="action-list mt-1">
+        <li><strong>Where is understanding accumulating?</strong> If engineering uses Claude, product uses ChatGPT, analytics uses Gemini -- you're building silos, not intelligence.</li>
+        <li><strong>Are you running a flywheel?</strong> Compound improvement, or just people trying things?</li>
+        <li><strong>What is your switching cost?</strong> If you've built 25% of a context layer internally, at what point would you migrate?</li>
       </ol>
     </div>
-    <div>
-      <h3 class="mb-1">Five Actions for the Next 90 Days</h3>
-      <ol class="action-list">
-        <li><strong>Conduct a harness architecture review.</strong> Treat this as a strategic commitment, not a procurement decision. Assess switching costs by business unit. Map the compounding lock-in timeline.</li>
-        <li><strong>Appoint frontier operations leads.</strong> Create explicit roles for people who track the human-agent boundary, maintain failure models, and redesign workflows as capabilities shift.</li>
-        <li><strong>Audit your document corpus for agent readability.</strong> Start specification engineering. Your corporate strategy, OKRs, and product docs should be agent-executable.</li>
-        <li><strong>Build a shared context layer.</strong> Deploy cross-tool memory infrastructure (MCP + vector DB). Eliminate the five-sticky-notes problem. Establish one source of organizational understanding.</li>
-        <li><strong>Maximize feedback density.</strong> 10 real tasks delegated daily to agents beats a 40-hour AI course. Build practice environments. Measure calibration, not knowledge.</li>
+    <div class="panel" style="justify-content:flex-start;">
+      <h3 class="t-mono" style="font-size:11px;">Five 90-Day Actions</h3>
+      <ol class="action-list mt-1">
+        <li><strong>Harness architecture review.</strong> Strategic commitment, not procurement. Map compounding lock-in timeline.</li>
+        <li><strong>Appoint frontier operations leads.</strong> Explicit roles for boundary-tracking and workflow redesign.</li>
+        <li><strong>Audit docs for agent readability.</strong> OKRs, strategy, product docs should be agent-executable specs.</li>
+        <li><strong>Build a shared context layer.</strong> MCP + vector DB. Eliminate the sticky-notes problem.</li>
+        <li><strong>Maximize feedback density.</strong> 10 real tasks/day to agents beats a 40-hour AI course.</li>
       </ol>
     </div>
   </div>
-
-  <div style="margin-top:3rem; padding:2rem; background:var(--black); color:var(--white); border:var(--border-thick); border-color:var(--red);">
-    <div class="grid-2" style="align-items:center;">
-      <div>
-        <h3 style="color:var(--red); font-size:1rem; margin-bottom:0.5rem;">The Decision That Compounds</h3>
-        <p style="color:#ccc; font-size:1.1rem; line-height:1.4;">Every quarter your team builds more infrastructure around your current architecture. Every quarter the switching cost goes up. Every quarter the gap between frontier operators and everyone else widens. The cost of waiting another quarter is not linear. It's exponential.</p>
-      </div>
-      <div style="text-align:center;">
-        <div class="big-number red" style="font-size:6rem;">Q2</div>
-        <p style="color:var(--red); font-family:'Space Mono', monospace; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.15em; margin-top:0.5rem;">Start Now or<br>Pay Compounding Cost</p>
-      </div>
-    </div>
-  </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════ SLIDE 17: CLOSING ═══ -->
-<section class="slide" id="slide-17" style="background:var(--black); color:var(--white); justify-content:center; text-align:center; min-height:60vh;">
-  <div class="subtitle" style="color:var(--red);">///</div>
-  <h1 style="color:var(--white); font-size:clamp(2rem, 5vw, 4.5rem); max-width:900px; margin:0 auto;">The model is a commodity.<br>The harness is the moat.<br>The specification is the skill.<br><span class="red">The clock is running.</span></h1>
-  <p class="mt-3" style="color:#555; font-family:'Space Mono', monospace; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.15em;">
-    Source Analysis: AI News & Strategy Daily / @natebjones / 10 Video Transcript Synthesis<br>
-    Framework Development: Enterprise Agentic AI Consulting Practice / March 2026
+<!-- ═══════════════════════ 17: CLOSING ═══════════════════════ -->
+<section class="slide bg-ink" data-slide="17" style="justify-content:center; text-align:center;">
+  <div class="t-display" style="color:var(--paper); font-size:clamp(36px, 5.5vw, 80px); max-width:1000px; margin:0 auto;">
+    The model is a commodity.<br>
+    The harness is the moat.<br>
+    The specification is the skill.<br>
+    <span class="c-signal">The clock is running.</span>
+  </div>
+  <p class="t-label mt-3" style="color:#444;">
+    Source: AI News & Strategy Daily / @natebjones / 10 Transcript Synthesis // March 2026
   </p>
+  <div class="slash-accent" style="bottom:35%;"></div>
 </section>
 
-<!-- ═══════════════════════════════════════════════ JS ═══ -->
+</div><!-- /deck -->
+
+<!-- ═══════════════════════ CONTROLS ═══════════════════════ -->
+<div class="controls">
+  <div class="controls-left">
+    <span class="branding">/// Agentic AI Readiness</span>
+  </div>
+  <div style="display:flex; align-items:center; gap:20px;">
+    <button class="ctrl-btn" id="btnPrev" title="Previous (←)">&#9664; Prev</button>
+    <div class="progress-track" id="progressTrack"></div>
+    <button class="ctrl-btn" id="btnNext" title="Next (→)">Next &#9654;</button>
+  </div>
+  <div class="controls-right">
+    <span class="slide-indicator" id="slideIndicator">01 / 17</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════ SCRIPT ═══════════════════════ -->
 <script>
-  // Build nav dots
+(function() {
   const slides = document.querySelectorAll('.slide');
-  const navDots = document.getElementById('navDots');
-  const counter = document.getElementById('slideCounter');
+  const total = slides.length;
+  const track = document.getElementById('progressTrack');
+  const indicator = document.getElementById('slideIndicator');
+  const btnPrev = document.getElementById('btnPrev');
+  const btnNext = document.getElementById('btnNext');
+  let current = 0;
 
+  // Build progress pips
   slides.forEach((_, i) => {
-    const dot = document.createElement('div');
-    dot.className = 'nav-dot';
-    dot.addEventListener('click', () => {
-      slides[i].scrollIntoView({ behavior: 'smooth' });
-    });
-    navDots.appendChild(dot);
+    const pip = document.createElement('div');
+    pip.className = 'progress-pip';
+    pip.title = `Slide ${i + 1}`;
+    pip.addEventListener('click', () => goTo(i));
+    track.appendChild(pip);
   });
 
-  // Intersection observer for active slide
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const idx = Array.from(slides).indexOf(entry.target);
-        const dots = document.querySelectorAll('.nav-dot');
-        dots.forEach((d, i) => d.classList.toggle('active', i === idx));
-        counter.textContent = String(idx + 1).padStart(2, '0') + ' / ' + String(slides.length).padStart(2, '0');
-      }
+  function goTo(idx) {
+    if (idx < 0 || idx >= total) return;
+    slides[current].classList.remove('active');
+    current = idx;
+    slides[current].classList.add('active');
+    updateUI();
+  }
+
+  function updateUI() {
+    const pips = track.querySelectorAll('.progress-pip');
+    pips.forEach((p, i) => {
+      p.classList.toggle('active', i === current);
+      p.classList.toggle('visited', i < current);
     });
-  }, { threshold: 0.4 });
+    indicator.textContent =
+      String(current + 1).padStart(2, '0') + ' / ' + String(total).padStart(2, '0');
+    btnPrev.style.opacity = current === 0 ? '0.3' : '1';
+    btnNext.style.opacity = current === total - 1 ? '0.3' : '1';
+  }
 
-  slides.forEach(s => observer.observe(s));
+  btnPrev.addEventListener('click', () => goTo(current - 1));
+  btnNext.addEventListener('click', () => goTo(current + 1));
 
-  // Fade-in observer
-  const fadeEls = document.querySelectorAll('.fade-in');
-  const fadeObs = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        e.target.classList.add('visible');
-      }
-    });
-  }, { threshold: 0.2 });
-
-  fadeEls.forEach(el => fadeObs.observe(el));
-
-  // Keyboard navigation
+  // Keyboard nav
   document.addEventListener('keydown', (e) => {
-    const dots = document.querySelectorAll('.nav-dot');
-    const active = Array.from(dots).findIndex(d => d.classList.contains('active'));
-    if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ') {
-      e.preventDefault();
-      if (active < slides.length - 1) slides[active + 1].scrollIntoView({ behavior: 'smooth' });
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ' || e.key === 'PageDown') {
+      e.preventDefault(); goTo(current + 1);
     }
-    if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
-      e.preventDefault();
-      if (active > 0) slides[active - 1].scrollIntoView({ behavior: 'smooth' });
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') {
+      e.preventDefault(); goTo(current - 1);
+    }
+    if (e.key === 'Home') { e.preventDefault(); goTo(0); }
+    if (e.key === 'End') { e.preventDefault(); goTo(total - 1); }
+  });
+
+  // Touch swipe
+  let touchStartX = 0;
+  document.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
+  document.addEventListener('touchend', (e) => {
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      diff > 0 ? goTo(current + 1) : goTo(current - 1);
     }
   });
+
+  updateUI();
+})();
 </script>
 
 </body>
