@@ -1,0 +1,6 @@
+{
+  "eval_id": 1,
+  "eval_name": "crosswalk-iso42001-mapping",
+  "prompt": "We already have ISO 42001 certification. What additional work do we need to do to get AIUC-1 certified? Map our existing ISO controls to AIUC-1 requirements.",
+  "assertions": []
+}

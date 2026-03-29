@@ -1,0 +1,6 @@
+{
+  "eval_id": 0,
+  "eval_name": "gap-analysis-insurance-chatbot",
+  "prompt": "We're building a customer-facing AI chatbot that handles insurance claims. It uses GPT-4o, has access to our claims database via API, and can initiate refund payments. We have SOC 2 but no AI-specific certifications. Can you do an AIUC-1 gap analysis?",
+  "assertions": []
+}

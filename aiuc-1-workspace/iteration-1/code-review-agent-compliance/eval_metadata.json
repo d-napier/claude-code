@@ -1,0 +1,6 @@
+{
+  "eval_id": 2,
+  "eval_name": "code-review-agent-compliance",
+  "prompt": "Review this AI agent code for AIUC-1 compliance. The code is in /home/user/claude-code/aiuc-1-workspace/sample_agent.py",
+  "assertions": []
+}

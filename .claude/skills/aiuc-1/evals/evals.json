@@ -1,0 +1,23 @@
+{
+  "skill_name": "aiuc-1",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "We're building a customer-facing AI chatbot that handles insurance claims. It uses GPT-4o, has access to our claims database via API, and can initiate refund payments. We have SOC 2 but no AI-specific certifications. Can you do an AIUC-1 gap analysis?",
+      "expected_output": "A structured gap analysis covering all 6 AIUC-1 domains, identifying which controls apply based on the agent's capabilities (text, automation, external-facing), current compliance status based on SOC 2, and specific gaps with remediation priorities.",
+      "files": []
+    },
+    {
+      "id": 1,
+      "prompt": "We already have ISO 42001 certification. What additional work do we need to do to get AIUC-1 certified? Map our existing ISO controls to AIUC-1 requirements.",
+      "expected_output": "A crosswalk mapping ISO 42001 controls to AIUC-1 equivalents, clearly identifying which AIUC-1 controls are already covered by ISO 42001, which have partial coverage, and which are net-new requirements (especially third-party technical testing).",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Review this AI agent code for AIUC-1 compliance. The code is in /home/user/claude-code/aiuc-1-workspace/sample_agent.py",
+      "expected_output": "A code-level compliance review identifying specific AIUC-1 control violations in the sample code, such as missing PII filtering (A006), no tool call restrictions (D003), no AI disclosure (E016), no input filtering (B005), and no logging (E015). Should reference specific line numbers and controls.",
+      "files": ["/home/user/claude-code/aiuc-1-workspace/sample_agent.py"]
+    }
+  ]
+}
