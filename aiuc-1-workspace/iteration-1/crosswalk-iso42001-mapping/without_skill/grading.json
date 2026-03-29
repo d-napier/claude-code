@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "Output contains explicit ISO 42001 control to AIUC-1 control mappings (referencing both ISO and AIUC-1 control IDs)",
+      "passed": true,
+      "evidence": "Document sections 1-10 contain structured mapping tables with consistent ISO 42001 references (e.g., 'Clause 5', 'Annex A.2') paired with AIUC-1 control IDs (e.g., 'GOV-1', 'SEC-1', 'RISK-1'). Each section includes a table with columns: 'AIUC-1 Requirement', 'ISO 42001 Mapping', 'Coverage', and 'Gap / Additional Work'."
+    },
+    {
+      "text": "Output identifies quarterly third-party technical testing (B001, C010-C012, D002, D004) as a major gap not covered by ISO 42001",
+      "passed": false,
+      "evidence": "The document does not reference any of the specific control IDs (B001, C010-C012, D002, D004). While Section 8 addresses 'Supply Chain and Third-Party Agent Security' and SUPPLY-1 discusses third-party assessment, there is no mention of quarterly third-party technical testing as a major gap, nor any reference to the specified control codes."
+    },
+    {
+      "text": "Output categorizes AIUC-1 controls by coverage status (fully covered, partially covered, net-new/no coverage)",
+      "passed": true,
+      "evidence": "Document extensively categorizes controls using coverage status terminology. The Executive Summary (lines 9-15) includes a coverage summary table with three categories: 'Full coverage', 'Partial coverage', and 'No coverage'. Throughout sections 1-10, each mapping table includes a 'Coverage' column with values: 'Partial', 'Minimal', 'None'. The Gap Analysis Summary (line 159 onwards) further discusses coverage categorization by topic area."
+    },
+    {
+      "text": "Output includes a prioritized action plan or implementation roadmap for closing the gaps",
+      "passed": true,
+      "evidence": "Document includes 'Recommended Implementation Roadmap' (lines 184-216) with 5 prioritized phases spanning 5-7 months: Phase 1 (Foundation: Months 1-2), Phase 2 (Core Security Controls: Months 2-4), Phase 3 (Monitoring and Response: Months 4-5), Phase 4 (Testing and Validation: Months 5-6), Phase 5 (Certification Preparation: Months 6-7). Each phase lists specific actionable tasks in bullet format."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 1,
+    "total": 4,
+    "pass_rate": 0.75
+  }
+}

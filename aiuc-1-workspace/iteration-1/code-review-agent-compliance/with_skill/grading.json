@@ -1,0 +1,45 @@
+{
+  "expectations": [
+    {
+      "text": "Output flags SQL injection vulnerabilities in the database query functions",
+      "passed": true,
+      "evidence": "FINDING 2: SQL Injection Vulnerabilities (lines 64-99) explicitly identifies SQL injection on lines 37, 46, 57-59, and 68 with code examples showing unsanitized f-string interpolation in database queries"
+    },
+    {
+      "text": "Output flags hardcoded credentials (API key on line 11, DB password in DB_CONFIG)",
+      "passed": true,
+      "evidence": "FINDING 1: Hardcoded Secrets (lines 37-50) explicitly flags the API key on line 11 and the DB_CONFIG password on lines 13-18 with code examples"
+    },
+    {
+      "text": "Output identifies missing PII filtering/protection and references AIUC-1 control A006",
+      "passed": true,
+      "evidence": "FINDING 6: No PII Protection (lines 198-215) identifies complete lack of PII protection and explicitly references control A006 on line 205. Also referenced in Domain A assessment table at line 269"
+    },
+    {
+      "text": "Output identifies missing tool call restrictions/authorization and references AIUC-1 control D003",
+      "passed": true,
+      "evidence": "FINDING 5: Unrestricted Tool Calls / No Authorization (lines 161-195) identifies the lack of authorization checks on tool calls and explicitly references control D003 on line 178. Also referenced in Domain D assessment table at line 304"
+    },
+    {
+      "text": "Output identifies missing AI disclosure mechanism and references AIUC-1 control E016",
+      "passed": true,
+      "evidence": "FINDING 7: No Logging or Audit Trail (lines 218-234) identifies missing AI disclosure mechanism with explicit reference to control E016 on line 226. Also referenced in Domain E assessment table at line 322"
+    },
+    {
+      "text": "Output identifies missing activity logging and references AIUC-1 control E015",
+      "passed": true,
+      "evidence": "FINDING 7: No Logging or Audit Trail (lines 218-234) identifies complete lack of logging and explicitly references control E015 on line 225. Also referenced in Domain E assessment table at line 321"
+    },
+    {
+      "text": "Output references specific line numbers in the code",
+      "passed": true,
+      "evidence": "Throughout the document, specific line numbers are consistently referenced including: lines 11 (API key), 13-18 (DB_CONFIG), 37/46/57-59/68 (SQL injection), 129-140 (tool calls), 143-151 (input handling), 153-177 (output handling), and others in findings and domain assessments"
+    }
+  ],
+  "summary": {
+    "passed": 7,
+    "failed": 0,
+    "total": 7,
+    "pass_rate": 1.0
+  }
+}

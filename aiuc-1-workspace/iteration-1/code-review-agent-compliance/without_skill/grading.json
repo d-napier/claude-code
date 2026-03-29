@@ -1,0 +1,45 @@
+{
+  "expectations": [
+    {
+      "text": "Output flags SQL injection vulnerabilities in the database query functions",
+      "passed": true,
+      "evidence": "Section '2. Input Validation and Injection Prevention' (lines 31-48) explicitly identifies SQL injection vulnerabilities on lines 37, 46, 57-58, and 68, with detailed descriptions and recommendations for parameterized queries."
+    },
+    {
+      "text": "Output flags hardcoded credentials (API key on line 11, DB password in DB_CONFIG)",
+      "passed": true,
+      "evidence": "Section '1. Credential and Secret Management' (lines 18-28) flags the hardcoded API key on line 11 ('sk-proj-abc123fake') and hardcoded database credentials on lines 14-18 including plaintext password ('ClaimsDb2024!')."
+    },
+    {
+      "text": "Output identifies missing PII filtering/protection and references AIUC-1 control A006",
+      "passed": false,
+      "evidence": "Section '8. Data Privacy and Protection' (lines 120-130) identifies PII protection issues on lines 37, 46, 68, 157-163, and 143-177, but does NOT explicitly reference 'AIUC-1 control A006'."
+    },
+    {
+      "text": "Output identifies missing tool call restrictions/authorization and references AIUC-1 control D003",
+      "passed": false,
+      "evidence": "Section '3. Authentication and Authorization' (lines 51-62) discusses authorization issues on lines 143-178, 53-62, 34-40, 43-50, and 65-71, but does NOT explicitly reference 'AIUC-1 control D003'."
+    },
+    {
+      "text": "Output identifies missing AI disclosure mechanism and references AIUC-1 control E016",
+      "passed": false,
+      "evidence": "The output contains no mention of 'disclosure mechanism', 'E016', or any AI disclosure requirements. This expectation is completely unaddressed in the code review."
+    },
+    {
+      "text": "Output identifies missing activity logging and references AIUC-1 control E015",
+      "passed": false,
+      "evidence": "Section '4. Audit Logging and Observability' (lines 65-76) identifies 'No logging whatsoever' on lines 1-189, but does NOT explicitly reference 'AIUC-1 control E015'."
+    },
+    {
+      "text": "Output references specific line numbers in the code",
+      "passed": true,
+      "evidence": "Throughout the document, specific line numbers are extensively referenced: lines 11, 14-18, 37, 46, 57-58, 68, 143-178, 53-62, 34-40, 43-50, 65-71, 1-189, 155-172, 20-27, 143-149, 30-71, 35-39, 44-49, 55-60, 67-70, 131, 129-140, 157-163, 180-188, 146-151, 166-171, 74-126, 102-112, etc."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 4,
+    "total": 7,
+    "pass_rate": 0.43
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "Output contains explicit ISO 42001 control to AIUC-1 control mappings (referencing both ISO and AIUC-1 control IDs)",
+      "passed": true,
+      "evidence": "Document contains detailed domain-by-domain tables (lines 27-126) with columns for AIUC-1 Control ID, Name, ISO 42001 Basis, and Gap Description. Each of 51 AIUC-1 controls is mapped to specific ISO 42001 control references (e.g., A.7.2, 6.1.2, 8.2, A.6.2.4, 5.1, 9.1, etc.). The aggregate summary table (lines 130-140) displays all 51 controls categorized by domain and coverage status."
+    },
+    {
+      "text": "Output identifies quarterly third-party technical testing (B001, C010-C012, D002, D004) as a major gap not covered by ISO 42001",
+      "passed": true,
+      "evidence": "The executive summary (line 7) explicitly states 'AIUC-1 mandates quarterly third-party evaluations for adversarial robustness, harmful outputs, hallucinations, and tool call safety that ISO 42001 does not require.' All six controls (B001, C010, C011, C012, D002, D004) are classified as Net-New (lines 45, 72-74, 85, 87) with specific justifications like 'ISO 42001 has no requirement for independent adversarial testing' (B001 at line 45) and 'ISO V&V foundation exists but AIUC-1 requires dedicated quarterly third-party evaluations' (C010-C012 at lines 72-74). The action plan (lines 174-175) prioritizes these as P0 critical controls, noting 'Extend third-party testing engagement to cover harmful outputs, out-of-scope outputs, customer-defined risks, hallucinations, and tool call safety' bundled into one quarterly program."
+    },
+    {
+      "text": "Output categorizes AIUC-1 controls by coverage status (fully covered, partially covered, net-new/no coverage)",
+      "passed": true,
+      "evidence": "Lines 15-21 establish an explicit 'Coverage Classification Key' defining three categories: 'Covered' (ISO substantially satisfies control), 'Partial' (ISO addresses governance layer but additional work required), and 'Net-New' (no ISO equivalent). Every control in Domains A-F is assigned one of these classifications. The aggregate coverage summary (lines 130-140) shows: 10 controls Covered (20%), 16 Partial (31%), 25 Net-New (49%) across 51 total AIUC-1 controls. Domain breakdowns are provided for each of six domains, and a supplementary mandatory/optional breakdown is also included (lines 144-147)."
+    },
+    {
+      "text": "Output includes a prioritized action plan or implementation roadmap for closing the gaps",
+      "passed": true,
+      "evidence": "Comprehensive five-phase action plan spans lines 165-229: Phase 1 (Weeks 1-3) addresses critical foundations with P0 priorities; Phase 2 (Weeks 2-5) implements technical controls with P1 priorities; Phase 3 (Weeks 3-5) extends policies with P2 priorities; Phase 4 (Weeks 4-6) strengthens partial controls with P3 priorities; Phase 5 (Weeks 5-8) addresses optional controls with P4 priorities. Each phase includes detailed action tables with specific control numbers, actions, and effort estimates (High/Medium/Low). Lines 232-243 provide an estimated timeline with key milestones and total certification timeline of '10-14 weeks from project initiation.' Lines 247-259 add six key recommendations including procurement strategy, ISO leverage points, and ongoing operational planning."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.00
+  }
+}

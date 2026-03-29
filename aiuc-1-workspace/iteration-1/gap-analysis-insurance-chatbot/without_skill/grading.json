@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "Output covers all 6 AIUC-1 domains (Data & Privacy, Security, Safety, Reliability, Accountability, Society)",
+      "passed": false,
+      "evidence": "The document covers most domains (Security, Reliability/Processing Integrity, Privacy, Accountability/Governance, Safety/Risk Assessment, Availability/Business Continuity) but does not explicitly structure content around the 6 core AIUC-1 domains. Instead, it uses 10 analysis domains (Governance, Risk Assessment, Model Lifecycle, Data Management, Security, Processing Integrity, Transparency, Privacy, Availability, Change Management). The 'Society' domain is not explicitly addressed as a distinct section, though some regulatory and stakeholder elements are mentioned scattered throughout."
+    },
+    {
+      "text": "Output references specific AIUC-1 control IDs (e.g., A001, B001, C001, D001, E001, F001)",
+      "passed": false,
+      "evidence": "The document contains no references to specific AIUC-1 control IDs. It discusses requirements, gaps, and priorities but does not cite control identifiers such as A001, B001, C001, D001, E001, F001, D003, D004, or A006. The analysis is structured by domain and requirement type rather than by control ID."
+    },
+    {
+      "text": "Output identifies automation/tool call controls (D003 or D004) as applicable since the agent has API access and can initiate refunds",
+      "passed": false,
+      "evidence": "The document extensively discusses the chatbot's ability to 'initiate refund payments' and identifies this as a critical control area. It addresses payment initiation controls, transaction limits, and authorization frameworks throughout sections 3.5.1, 3.5.2, and the remediation roadmap (Phase 1, item 3). However, it does not reference specific AIUC-1 control IDs D003 or D004, despite clearly identifying the automation/API access issue as critical and needing specific controls."
+    },
+    {
+      "text": "Output flags PII concerns (A006) given the agent handles sensitive insurance claims data",
+      "passed": false,
+      "evidence": "The document extensively addresses PII and privacy concerns in section 3.8 and throughout. It identifies 'PII, PHI, and sensitive financial data' (section 3.4.1), discusses privacy impact assessments (3.8.1), data processing agreements with OpenAI (3.8.2), and customer consent (3.8.1). However, it does not reference the specific control ID 'A006' or any other AIUC-1 control ID, despite clearly identifying the PII/privacy gap as critical."
+    },
+    {
+      "text": "Output includes actionable remediation steps or a remediation roadmap, not just a list of gaps",
+      "passed": true,
+      "evidence": "Section 5 provides a comprehensive 'Remediation Roadmap' with three phases: Phase 1 (Immediate, 0-30 days) with 5 specific action items, Phase 2 (Short-term, 30-90 days) with 5 numbered action items, and Phase 3 (Medium-term, 90-180 days) with 4 action items. Each action item is specific and actionable (e.g., 'Appoint an AI system owner', 'Formalize DPA with OpenAI', 'Implement transaction limits'). Section 6 provides additional 'Key Recommendations' organized by category (Architectural, Compliance, Operational), offering further guidance beyond gap identification."
+    },
+    {
+      "text": "Output acknowledges existing SOC 2 coverage and distinguishes what SOC 2 already covers vs what is net-new for AIUC-1",
+      "passed": true,
+      "evidence": "Executive Summary states: 'The organization holds SOC 2 certification, which provides a foundation for many general security and operational controls. However, the AI-specific requirements introduced by AIUC-1 represent substantial new ground that must be addressed.' Conclusion explicitly quantifies: 'the existing SOC 2 certification provides a meaningful foundation, but the AI-specific requirements represent approximately 70% net-new work.' Section 6 includes 'Leverage Existing SOC 2: Map existing SOC 2 controls to AIUC-1 requirements to identify reusable controls and minimize duplicative effort.' Multiple sections note 'Partial gap' for items where SOC 2 provides partial coverage (e.g., API security, change management, incident response)."
+    }
+  ],
+  "summary": {
+    "passed": 2,
+    "failed": 4,
+    "total": 6,
+    "pass_rate": 0.33
+  }
+}
