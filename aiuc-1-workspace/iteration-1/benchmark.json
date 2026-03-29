@@ -1,0 +1,182 @@
+{
+  "metadata": {
+    "skill_name": "aiuc-1",
+    "skill_path": "/home/user/claude-code/.claude/skills/aiuc-1",
+    "executor_model": "claude-opus-4-6",
+    "analyzer_model": "claude-opus-4-6",
+    "timestamp": "2026-03-29T01:30:00Z",
+    "evals_run": [0, 1, 2],
+    "runs_per_configuration": 1
+  },
+
+  "runs": [
+    {
+      "eval_id": 0,
+      "eval_name": "Gap Analysis: Insurance Chatbot",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 841.9,
+        "tokens": 31373,
+        "tool_calls": 5,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "Output covers all 6 AIUC-1 domains", "passed": true, "evidence": "All 6 domains covered with dedicated sections"},
+        {"text": "Output references specific AIUC-1 control IDs", "passed": true, "evidence": "Control IDs A001-F002 extensively referenced"},
+        {"text": "Output identifies automation/tool call controls (D003/D004)", "passed": true, "evidence": "D003 and D004 flagged as critical for refund capability"},
+        {"text": "Output flags PII concerns (A006)", "passed": true, "evidence": "A006 prominently flagged for insurance claims data"},
+        {"text": "Output includes actionable remediation steps", "passed": true, "evidence": "4-phase implementation roadmap provided"},
+        {"text": "Output acknowledges existing SOC 2 coverage", "passed": true, "evidence": "Dedicated section distinguishing SOC 2 vs net-new"}
+      ]
+    },
+    {
+      "eval_id": 0,
+      "eval_name": "Gap Analysis: Insurance Chatbot",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.33,
+        "passed": 2,
+        "failed": 4,
+        "total": 6,
+        "time_seconds": 217.2,
+        "tokens": 22071,
+        "tool_calls": 2,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "Output covers all 6 AIUC-1 domains", "passed": true, "evidence": "Domains covered but with generic names"},
+        {"text": "Output references specific AIUC-1 control IDs", "passed": false, "evidence": "No specific AIUC-1 control IDs referenced"},
+        {"text": "Output identifies automation/tool call controls (D003/D004)", "passed": false, "evidence": "No D003/D004 references found"},
+        {"text": "Output flags PII concerns (A006)", "passed": false, "evidence": "PII mentioned generically but A006 not referenced"},
+        {"text": "Output includes actionable remediation steps", "passed": true, "evidence": "6-month phased roadmap provided"},
+        {"text": "Output acknowledges existing SOC 2 coverage", "passed": false, "evidence": "SOC 2 mentioned but no detailed distinction of coverage"}
+      ]
+    },
+    {
+      "eval_id": 1,
+      "eval_name": "Crosswalk: ISO 42001 Mapping",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 1465.5,
+        "tokens": 36510,
+        "tool_calls": 8,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "Output contains explicit ISO-to-AIUC-1 control mappings", "passed": true, "evidence": "Both ISO and AIUC-1 control IDs referenced in mappings"},
+        {"text": "Output identifies quarterly third-party testing gap", "passed": true, "evidence": "B001, C010-C012, D002, D004 identified as major gap"},
+        {"text": "Output categorizes controls by coverage status", "passed": true, "evidence": "Controls categorized as fully covered, partial, net-new"},
+        {"text": "Output includes prioritized action plan", "passed": true, "evidence": "5-phase action plan with 10-14 week timeline"}
+      ]
+    },
+    {
+      "eval_id": 1,
+      "eval_name": "Crosswalk: ISO 42001 Mapping",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.75,
+        "passed": 3,
+        "failed": 1,
+        "total": 4,
+        "time_seconds": 223.6,
+        "tokens": 22725,
+        "tool_calls": 2,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "Output contains explicit ISO-to-AIUC-1 control mappings", "passed": true, "evidence": "Mappings present but with some inaccuracies"},
+        {"text": "Output identifies quarterly third-party testing gap", "passed": false, "evidence": "Third-party testing mentioned but specific control IDs B001/C010-C012/D002/D004 not referenced"},
+        {"text": "Output categorizes controls by coverage status", "passed": true, "evidence": "Controls categorized by coverage level"},
+        {"text": "Output includes prioritized action plan", "passed": true, "evidence": "7-month implementation roadmap provided"}
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "Code Review: Agent Compliance",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 115.3,
+        "tokens": 26003,
+        "tool_calls": 5,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "Output flags SQL injection vulnerabilities", "passed": true, "evidence": "SQL injection identified in all 4 database functions"},
+        {"text": "Output flags hardcoded credentials", "passed": true, "evidence": "API key line 11, DB password lines 13-18 flagged"},
+        {"text": "Output identifies missing PII filtering (A006)", "passed": true, "evidence": "A006 referenced with missing PII detection/redaction"},
+        {"text": "Output identifies missing tool call restrictions (D003)", "passed": true, "evidence": "D003 referenced for unrestricted tool calls"},
+        {"text": "Output identifies missing AI disclosure (E016)", "passed": true, "evidence": "E016 referenced for missing disclosure mechanism"},
+        {"text": "Output identifies missing logging (E015)", "passed": true, "evidence": "E015 referenced for absent audit logging"},
+        {"text": "Output references specific line numbers", "passed": true, "evidence": "Lines 11, 13-18, 37, 46, 57-59, 68, 129-140, 143-177 referenced"}
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "Code Review: Agent Compliance",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.43,
+        "passed": 3,
+        "failed": 4,
+        "total": 7,
+        "time_seconds": 92.7,
+        "tokens": 16052,
+        "tool_calls": 4,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "Output flags SQL injection vulnerabilities", "passed": true, "evidence": "SQL injection identified in database functions"},
+        {"text": "Output flags hardcoded credentials", "passed": true, "evidence": "Hardcoded API key and DB password flagged"},
+        {"text": "Output identifies missing PII filtering (A006)", "passed": false, "evidence": "PII mentioned but A006 control ID not referenced"},
+        {"text": "Output identifies missing tool call restrictions (D003)", "passed": false, "evidence": "Tool restrictions discussed but D003 not referenced"},
+        {"text": "Output identifies missing AI disclosure (E016)", "passed": false, "evidence": "AI disclosure not mentioned or E016 not referenced"},
+        {"text": "Output identifies missing logging (E015)", "passed": false, "evidence": "Logging mentioned but E015 not referenced"},
+        {"text": "Output references specific line numbers", "passed": true, "evidence": "Line numbers referenced throughout"}
+      ]
+    }
+  ],
+
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0},
+      "time_seconds": {"mean": 807.6, "stddev": 558.0, "min": 115.3, "max": 1465.5},
+      "tokens": {"mean": 31295, "stddev": 4296, "min": 26003, "max": 36510}
+    },
+    "without_skill": {
+      "pass_rate": {"mean": 0.50, "stddev": 0.18, "min": 0.33, "max": 0.75},
+      "time_seconds": {"mean": 177.8, "stddev": 58.3, "min": 92.7, "max": 223.6},
+      "tokens": {"mean": 20283, "stddev": 2955, "min": 16052, "max": 22725}
+    },
+    "delta": {
+      "pass_rate": "+0.50",
+      "time_seconds": "+629.8",
+      "tokens": "+11012"
+    }
+  },
+
+  "notes": [
+    "With-skill runs achieve 100% pass rate across all 3 evals vs 50% baseline average — the skill's primary value is enabling precise AIUC-1 control ID references and structured domain coverage",
+    "Baseline runs consistently fail on control-ID-specific assertions (A006, D003, E015, E016) — without the skill, Claude lacks specific AIUC-1 control knowledge",
+    "The crosswalk baseline (75%) performs best among baselines because ISO 42001 mapping is partially addressable with general AI governance knowledge",
+    "With-skill runs use significantly more tokens (+54%) and time (+354%) due to reading reference files, but the quality improvement is substantial",
+    "SQL injection and hardcoded credential detection pass in both configurations — these are general security findings, not AIUC-1-specific, making them non-discriminating assertions"
+  ]
+}
