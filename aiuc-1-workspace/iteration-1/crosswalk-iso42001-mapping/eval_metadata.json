@@ -2,5 +2,10 @@
   "eval_id": 1,
   "eval_name": "crosswalk-iso42001-mapping",
   "prompt": "We already have ISO 42001 certification. What additional work do we need to do to get AIUC-1 certified? Map our existing ISO controls to AIUC-1 requirements.",
-  "assertions": []
+  "assertions": [
+    "Output contains explicit ISO 42001 control to AIUC-1 control mappings (referencing both ISO and AIUC-1 control IDs)",
+    "Output identifies quarterly third-party technical testing (B001, C010-C012, D002, D004) as a major gap not covered by ISO 42001",
+    "Output categorizes AIUC-1 controls by coverage status (fully covered, partially covered, net-new/no coverage)",
+    "Output includes a prioritized action plan or implementation roadmap for closing the gaps"
+  ]
 }

@@ -2,5 +2,12 @@
   "eval_id": 0,
   "eval_name": "gap-analysis-insurance-chatbot",
   "prompt": "We're building a customer-facing AI chatbot that handles insurance claims. It uses GPT-4o, has access to our claims database via API, and can initiate refund payments. We have SOC 2 but no AI-specific certifications. Can you do an AIUC-1 gap analysis?",
-  "assertions": []
+  "assertions": [
+    "Output covers all 6 AIUC-1 domains (Data & Privacy, Security, Safety, Reliability, Accountability, Society)",
+    "Output references specific AIUC-1 control IDs (e.g., A001, B001, C001, D001, E001, F001)",
+    "Output identifies automation/tool call controls (D003 or D004) as applicable since the agent has API access and can initiate refunds",
+    "Output flags PII concerns (A006) given the agent handles sensitive insurance claims data",
+    "Output includes actionable remediation steps or a remediation roadmap, not just a list of gaps",
+    "Output acknowledges existing SOC 2 coverage and distinguishes what SOC 2 already covers vs what is net-new for AIUC-1"
+  ]
 }

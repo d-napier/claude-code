@@ -2,5 +2,13 @@
   "eval_id": 2,
   "eval_name": "code-review-agent-compliance",
   "prompt": "Review this AI agent code for AIUC-1 compliance. The code is in /home/user/claude-code/aiuc-1-workspace/sample_agent.py",
-  "assertions": []
+  "assertions": [
+    "Output flags SQL injection vulnerabilities in the database query functions",
+    "Output flags hardcoded credentials (API key on line 11, DB password in DB_CONFIG)",
+    "Output identifies missing PII filtering/protection and references AIUC-1 control A006",
+    "Output identifies missing tool call restrictions/authorization and references AIUC-1 control D003",
+    "Output identifies missing AI disclosure mechanism and references AIUC-1 control E016",
+    "Output identifies missing activity logging and references AIUC-1 control E015",
+    "Output references specific line numbers in the code"
+  ]
 }

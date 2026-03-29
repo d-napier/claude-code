@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "Output covers all 6 AIUC-1 domains (Data & Privacy, Security, Safety, Reliability, Accountability, Society)",
+      "passed": true,
+      "evidence": "The gap analysis includes dedicated sections for all six domains: Domain A (Data & Privacy, pages 41-61), Domain B (Security, pages 64-85), Domain C (Safety, pages 88-111), Domain D (Reliability, pages 114-133), Domain E (Accountability, pages 136-166), and Domain F (Society, pages 169-180). Each domain contains control matrices and remediation steps."
+    },
+    {
+      "text": "Output references specific AIUC-1 control IDs (e.g., A001, B001, C001, D001, E001, F001)",
+      "passed": true,
+      "evidence": "The document extensively references specific control IDs throughout. Examples include A001-A007, B001-B009, C001-C012, D001-D004, E001-E016, F001-F002. Control IDs appear in structured tables (pages 44-50, 66-74, 90-100, 116-121, 138-150, 172-174) and in remediation steps and priority summaries (pages 200-204)."
+    },
+    {
+      "text": "Output identifies automation/tool call controls (D003 or D004) as applicable since the agent has API access and can initiate refunds",
+      "passed": true,
+      "evidence": "D003 and D004 are explicitly identified as Critical priority controls. Page 120 marks 'D003 | Restrict Unsafe Tool Calls | **Gap** | Critical | No documented restrictions on claims DB queries or refund payment tool calls'. Pages 127-131 provide detailed D003 remediation including refund payment restrictions and approval thresholds. The Key Risk Callouts section (page 248) explicitly states: 'Refund Payment Capability: The ability to initiate payments makes D003 (tool call restrictions) and D004 (third-party tool call testing) among the highest-priority items.'"
+    },
+    {
+      "text": "Output flags PII concerns (A006) given the agent handles sensitive insurance claims data",
+      "passed": true,
+      "evidence": "A006 is identified on page 50 as 'A006 | Prevent PII Leakage | **Partial** | Critical | SOC 2 covers access controls/MFA, but no PII detection/redaction in AI prompts/outputs'. Page 59 provides detailed remediation: 'Implement PII detection and redaction before sending claims data to GPT-4o. Add PII filtering on outputs before displaying to customers. Integrate with DLP systems.' The Key Risk Callouts section (page 251) emphasizes: 'Sensitive Insurance Data: Claims data includes health information, financial details, and personal identifiers. Sending this to OpenAI's GPT-4o API requires careful evaluation under insurance regulations and robust PII controls (A006).'"
+    },
+    {
+      "text": "Output includes actionable remediation steps or a remediation roadmap, not just a list of gaps",
+      "passed": true,
+      "evidence": "The document includes two levels of remediation. First, detailed 'Remediation Steps' appear after each domain section (pages 53-61 for Domain A, 76-85 for Domain B, 102-111 for Domain C, 123-133 for Domain D, 153-166 for Domain E, 176-180 for Domain F). Second, a comprehensive 'Recommended Implementation Roadmap' (pages 208-242) provides a four-phase timeline: Phase 1 (Weeks 1-3) with 5 actions, Phase 2 (Weeks 3-6) with 5 actions, Phase 3 (Weeks 6-10) with 5 actions, and Phase 4 (Weeks 10-14) with 5 actions. Each action is specific and time-bounded."
+    },
+    {
+      "text": "Output acknowledges existing SOC 2 coverage and distinguishes what SOC 2 already covers vs what is net-new for AIUC-1",
+      "passed": true,
+      "evidence": "A dedicated 'SOC 2 Coverage Assessment' section (pages 26-37) explicitly states what SOC 2 covers (access controls, change management, logging, vendor management, incident response, data processing locations) and what it does not (AI-specific data policies, prompt injection defense, hallucination prevention, harmful outputs, AI risk taxonomy, tool call restrictions, adversarial testing, third-party AI evaluations). Throughout the domain sections, controls are marked as 'Partial' when SOC 2 provides some coverage (examples: B007, B008, E001, E004, E005, E006, E008, E011, E015). Page 256 summarizes: 'While SOC 2 provides a foundation for general IT controls, it does not address any of the AI-specific requirements in AIUC-1. Approximately 65% of controls are complete gaps.'"
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.00
+  }
+}

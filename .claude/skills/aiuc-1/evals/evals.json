@@ -5,19 +5,42 @@
       "id": 0,
       "prompt": "We're building a customer-facing AI chatbot that handles insurance claims. It uses GPT-4o, has access to our claims database via API, and can initiate refund payments. We have SOC 2 but no AI-specific certifications. Can you do an AIUC-1 gap analysis?",
       "expected_output": "A structured gap analysis covering all 6 AIUC-1 domains, identifying which controls apply based on the agent's capabilities (text, automation, external-facing), current compliance status based on SOC 2, and specific gaps with remediation priorities.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Output covers all 6 AIUC-1 domains (Data & Privacy, Security, Safety, Reliability, Accountability, Society)",
+        "Output references specific AIUC-1 control IDs (e.g., A001, B001, C001, D001, E001, F001)",
+        "Output identifies automation/tool call controls (D003 or D004) as applicable since the agent has API access and can initiate refunds",
+        "Output flags PII concerns (A006) given the agent handles sensitive insurance claims data",
+        "Output includes actionable remediation steps or a remediation roadmap, not just a list of gaps",
+        "Output acknowledges existing SOC 2 coverage and distinguishes what SOC 2 already covers vs what is net-new for AIUC-1"
+      ]
     },
     {
       "id": 1,
       "prompt": "We already have ISO 42001 certification. What additional work do we need to do to get AIUC-1 certified? Map our existing ISO controls to AIUC-1 requirements.",
       "expected_output": "A crosswalk mapping ISO 42001 controls to AIUC-1 equivalents, clearly identifying which AIUC-1 controls are already covered by ISO 42001, which have partial coverage, and which are net-new requirements (especially third-party technical testing).",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Output contains explicit ISO 42001 control to AIUC-1 control mappings (referencing both ISO and AIUC-1 control IDs)",
+        "Output identifies quarterly third-party technical testing (B001, C010-C012, D002, D004) as a major gap not covered by ISO 42001",
+        "Output categorizes AIUC-1 controls by coverage status (fully covered, partially covered, net-new/no coverage)",
+        "Output includes a prioritized action plan or implementation roadmap for closing the gaps"
+      ]
     },
     {
       "id": 2,
       "prompt": "Review this AI agent code for AIUC-1 compliance. The code is in /home/user/claude-code/aiuc-1-workspace/sample_agent.py",
       "expected_output": "A code-level compliance review identifying specific AIUC-1 control violations in the sample code, such as missing PII filtering (A006), no tool call restrictions (D003), no AI disclosure (E016), no input filtering (B005), and no logging (E015). Should reference specific line numbers and controls.",
-      "files": ["/home/user/claude-code/aiuc-1-workspace/sample_agent.py"]
+      "files": ["/home/user/claude-code/aiuc-1-workspace/sample_agent.py"],
+      "expectations": [
+        "Output flags SQL injection vulnerabilities in the database query functions",
+        "Output flags hardcoded credentials (API key on line 11, DB password in DB_CONFIG)",
+        "Output identifies missing PII filtering/protection and references AIUC-1 control A006",
+        "Output identifies missing tool call restrictions/authorization and references AIUC-1 control D003",
+        "Output identifies missing AI disclosure mechanism and references AIUC-1 control E016",
+        "Output identifies missing activity logging and references AIUC-1 control E015",
+        "Output references specific line numbers in the code"
+      ]
     }
   ]
 }
