@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forge Design System -- Preview (Dark / Canonical)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap');
+
+  *, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg-void: #0a0a0a;
+    --bg-surface: #111111;
+    --bg-elevated: #1a1a1a;
+    --bg-input: #0d0d0d;
+    --bg-hover: #1f1f1f;
+    --bg-active: #252525;
+    --fg-primary: #e0e0e0;
+    --fg-secondary: #888888;
+    --fg-muted: #555555;
+    --fg-inverse: #0a0a0a;
+    --accent-green: #00ff88;
+    --accent-cyan: #00e5ff;
+    --accent-magenta: #ff00aa;
+    --accent-yellow: #ffdd00;
+    --accent-orange: #ff6600;
+    --accent-white: #ffffff;
+    --border-default: #2a2a2a;
+    --border-focus: #00ff88;
+    --border-error: #ff00aa;
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-8: 48px;
+    --space-10: 64px;
+    --transition-fast: 80ms ease-out;
+    --transition-default: 150ms ease-out;
+  }
+
+  body {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 22px;
+    letter-spacing: 0.02em;
+    background: var(--bg-void);
+    color: var(--fg-primary);
+  }
+
+  /* HEADER */
+  .header {
+    height: 48px;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border-default);
+    display: flex;
+    align-items: center;
+    padding: 0 var(--space-4);
+    justify-content: space-between;
+  }
+
+  .header-title {
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent-green);
+  }
+
+  .header-nav {
+    display: flex;
+    gap: var(--space-4);
+  }
+
+  .header-nav a {
+    color: var(--fg-secondary);
+    text-decoration: none;
+    font-size: 13px;
+    text-transform: uppercase;
+    font-weight: 600;
+    transition: color var(--transition-fast);
+  }
+
+  .header-nav a:hover {
+    color: var(--fg-primary);
+  }
+
+  /* LAYOUT */
+  .layout {
+    display: flex;
+    min-height: calc(100vh - 48px - 28px);
+  }
+
+  .sidebar {
+    width: 240px;
+    background: var(--bg-surface);
+    border-right: 1px solid var(--border-default);
+    padding: var(--space-4);
+    flex-shrink: 0;
+  }
+
+  .sidebar-section {
+    margin-bottom: var(--space-5);
+  }
+
+  .sidebar-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--fg-muted);
+    font-weight: 600;
+    margin-bottom: var(--space-2);
+  }
+
+  .sidebar-item {
+    display: block;
+    padding: var(--space-1) var(--space-2);
+    color: var(--fg-secondary);
+    font-size: 13px;
+    text-decoration: none;
+    transition: color var(--transition-fast), background var(--transition-fast);
+    cursor: pointer;
+  }
+
+  .sidebar-item:hover {
+    color: var(--fg-primary);
+    background: var(--bg-hover);
+  }
+
+  .sidebar-item.active {
+    color: var(--accent-green);
+  }
+
+  /* MAIN */
+  .main {
+    flex: 1;
+    padding: var(--space-6);
+    max-width: 1200px;
+  }
+
+  /* SECTIONS */
+  .section {
+    margin-bottom: var(--space-8);
+  }
+
+  .section-title {
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 28px;
+    margin-bottom: var(--space-5);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .section-subtitle {
+    font-size: 13px;
+    color: var(--fg-secondary);
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: var(--space-3);
+  }
+
+  /* COLOR SWATCHES */
+  .swatch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: var(--space-3);
+    margin-bottom: var(--space-5);
+  }
+
+  .swatch {
+    border: 1px solid var(--border-default);
+  }
+
+  .swatch-color {
+    height: 64px;
+    display: flex;
+    align-items: flex-end;
+    padding: var(--space-2);
+  }
+
+  .swatch-info {
+    padding: var(--space-2);
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border-default);
+  }
+
+  .swatch-name {
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .swatch-value {
+    font-size: 11px;
+    color: var(--fg-muted);
+  }
+
+  /* BUTTONS */
+  .button-row {
+    display: flex;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-4);
+  }
+
+  .btn {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    padding: var(--space-2) var(--space-4);
+    border: none;
+    cursor: pointer;
+    border-radius: 0;
+    transition: background var(--transition-fast);
+  }
+
+  .btn-primary {
+    background: var(--accent-green);
+    color: var(--fg-inverse);
+  }
+  .btn-primary:hover { background: #00cc6e; }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--fg-primary);
+    border: 1px solid var(--border-default);
+  }
+  .btn-secondary:hover { border-color: var(--fg-primary); }
+
+  .btn-destructive {
+    background: var(--accent-magenta);
+    color: var(--fg-inverse);
+  }
+  .btn-destructive:hover { background: #cc0088; }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--fg-secondary);
+    border: none;
+  }
+  .btn-ghost:hover { color: var(--fg-primary); }
+
+  /* INPUTS */
+  .input-group {
+    margin-bottom: var(--space-4);
+    max-width: 400px;
+  }
+
+  .input-label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--fg-secondary);
+    font-weight: 600;
+    margin-bottom: var(--space-1);
+  }
+
+  .input-field {
+    width: 100%;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    padding: var(--space-2) var(--space-3);
+    background: var(--bg-input);
+    color: var(--fg-primary);
+    border: 1px solid var(--border-default);
+    border-radius: 0;
+    outline: none;
+    caret-color: var(--accent-green);
+    transition: border-color var(--transition-fast);
+  }
+
+  .input-field:focus {
+    border-color: var(--border-focus);
+  }
+
+  .input-field::placeholder {
+    color: var(--fg-muted);
+  }
+
+  textarea.input-field {
+    min-height: 120px;
+    resize: vertical;
+  }
+
+  /* PANEL */
+  .panel {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+  }
+
+  .panel-header {
+    font-size: 13px;
+    text-transform: uppercase;
+    color: var(--fg-secondary);
+    font-weight: 600;
+    padding-bottom: var(--space-3);
+    margin-bottom: var(--space-3);
+    border-bottom: 1px solid var(--border-default);
+  }
+
+  /* TABLE */
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .table th {
+    text-align: left;
+    color: var(--fg-secondary);
+    text-transform: uppercase;
+    font-weight: 600;
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--border-default);
+  }
+
+  .table td {
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--border-default);
+  }
+
+  .table tr:hover td {
+    background: var(--bg-hover);
+  }
+
+  /* BADGES */
+  .badge {
+    display: inline-block;
+    padding: var(--space-1) var(--space-2);
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 700;
+    border: 1px solid currentColor;
+    background: transparent;
+    letter-spacing: 0.02em;
+  }
+
+  .badge-success { color: var(--accent-green); }
+  .badge-info { color: var(--accent-cyan); }
+  .badge-warning { color: var(--accent-yellow); }
+  .badge-error { color: var(--accent-magenta); }
+  .badge-neutral { color: var(--fg-secondary); }
+
+  /* TABS */
+  .tab-bar {
+    display: flex;
+    border-bottom: 1px solid var(--border-default);
+    margin-bottom: var(--space-4);
+  }
+
+  .tab {
+    padding: var(--space-2) var(--space-4);
+    font-size: 13px;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--fg-secondary);
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    font-family: var(--font-mono);
+    transition: color var(--transition-fast);
+  }
+
+  .tab:hover { color: var(--fg-primary); }
+  .tab.active {
+    color: var(--accent-green);
+    border-bottom-color: var(--accent-green);
+  }
+
+  /* TERMINAL */
+  .terminal {
+    background: var(--bg-void);
+    border: 1px solid var(--border-default);
+    padding: var(--space-4);
+    font-size: 13px;
+    overflow-x: auto;
+    margin-bottom: var(--space-4);
+  }
+
+  .terminal-line { margin-bottom: 2px; }
+  .terminal-prompt { color: var(--accent-green); }
+  .terminal-output { color: var(--fg-secondary); }
+  .terminal-error { color: var(--accent-magenta); }
+
+  /* STATUS BAR */
+  .status-bar {
+    height: 28px;
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border-default);
+    display: flex;
+    align-items: center;
+    padding: 0 var(--space-4);
+    font-size: 11px;
+    color: var(--fg-muted);
+    gap: var(--space-4);
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    display: inline-block;
+  }
+
+  .status-dot.online { background: var(--accent-green); }
+  .status-dot.warning { background: var(--accent-yellow); }
+  .status-dot.error { background: var(--accent-magenta); }
+  .status-dot.offline { background: var(--fg-muted); }
+
+  .badge-row {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-4);
+  }
+
+  /* TYPOGRAPHY PREVIEW */
+  .type-sample {
+    margin-bottom: var(--space-3);
+  }
+
+  .type-label {
+    font-size: 11px;
+    color: var(--fg-muted);
+    text-transform: uppercase;
+    margin-bottom: var(--space-1);
+  }
+
+  /* Glow effect for hero text */
+  .glow-green {
+    text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+  }
+
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <span class="header-title glow-green">// Forge</span>
+    <nav class="header-nav">
+      <a href="#">Dashboard</a>
+      <a href="#">Projects</a>
+      <a href="#">Settings</a>
+    </nav>
+  </header>
+
+  <!-- LAYOUT -->
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-label">Components</div>
+        <a class="sidebar-item active" href="#">Colors</a>
+        <a class="sidebar-item" href="#">Typography</a>
+        <a class="sidebar-item" href="#">Buttons</a>
+        <a class="sidebar-item" href="#">Inputs</a>
+        <a class="sidebar-item" href="#">Tables</a>
+        <a class="sidebar-item" href="#">Badges</a>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Patterns</div>
+        <a class="sidebar-item" href="#">Terminal</a>
+        <a class="sidebar-item" href="#">Panels</a>
+        <a class="sidebar-item" href="#">Navigation</a>
+        <a class="sidebar-item" href="#">Layout</a>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+
+      <!-- COLORS -->
+      <section class="section">
+        <h2 class="section-title">Color Palette</h2>
+
+        <div class="section-subtitle">Backgrounds</div>
+        <div class="swatch-grid">
+          <div class="swatch">
+            <div class="swatch-color" style="background:#0a0a0a;border:1px solid #2a2a2a;"><span style="color:#555;font-size:11px;">--bg-void</span></div>
+            <div class="swatch-info"><span class="swatch-name">Void</span><br><span class="swatch-value">#0a0a0a</span></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background:#111111;"><span style="color:#555;font-size:11px;">--bg-surface</span></div>
+            <div class="swatch-info"><span class="swatch-name">Surface</span><br><span class="swatch-value">#111111</span></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background:#1a1a1a;"><span style="color:#555;font-size:11px;">--bg-elevated</span></div>
+            <div class="swatch-info"><span class="swatch-name">Elevated</span><br><span class="swatch-value">#1a1a1a</span></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background:#1f1f1f;"><span style="color:#555;font-size:11px;">--bg-hover</span></div>
+            <div class="swatch-info"><span class="swatch-name">Hover</span><br><span class="swatch-value">#1f1f1f</span></div>
+          </div>
+        </div>
+
+        <div class="section-subtitle">Neon Accents</div>
+        <div class="swatch-grid">
+          <div class="swatch">
+            <div class="swatch-color" style="background:#00ff88;"><span style="color:#0a0a0a;font-size:11px;font-weight:700;">--accent-green</span></div>
+            <div class="swatch-info"><span class="swatch-name">Green</span><br><span class="swatch-value">#00ff88</span></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background:#00e5ff;"><span style="color:#0a0a0a;font-size:11px;font-weight:700;">--accent-cyan</span></div>
+            <div class="swatch-info"><span class="swatch-name">Cyan</span><br><span class="swatch-value">#00e5ff</span></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background:#ff00aa;"><span style="color:#0a0a0a;font-size:11px;font-weight:700;">--accent-magenta</span></div>
+            <div class="swatch-info"><span class="swatch-name">Magenta</span><br><span class="swatch-value">#ff00aa</span></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background:#ffdd00;"><span style="color:#0a0a0a;font-size:11px;font-weight:700;">--accent-yellow</span></div>
+            <div class="swatch-info"><span class="swatch-name">Yellow</span><br><span class="swatch-value">#ffdd00</span></div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background:#ff6600;"><span style="color:#0a0a0a;font-size:11px;font-weight:700;">--accent-orange</span></div>
+            <div class="swatch-info"><span class="swatch-name">Orange</span><br><span class="swatch-value">#ff6600</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TYPOGRAPHY -->
+      <section class="section">
+        <h2 class="section-title">Typography</h2>
+        <div class="type-sample">
+          <div class="type-label">text-2xl / 40px / 800</div>
+          <div style="font-size:40px;line-height:48px;font-weight:800;" class="glow-green">FORGE SYSTEM</div>
+        </div>
+        <div class="type-sample">
+          <div class="type-label">text-xl / 28px / 700</div>
+          <div style="font-size:28px;line-height:36px;font-weight:700;">Page Title</div>
+        </div>
+        <div class="type-sample">
+          <div class="type-label">text-lg / 20px / 600</div>
+          <div style="font-size:20px;line-height:28px;font-weight:600;">Section Heading</div>
+        </div>
+        <div class="type-sample">
+          <div class="type-label">text-md / 16px / 500</div>
+          <div style="font-size:16px;line-height:24px;font-weight:500;">Subheading text</div>
+        </div>
+        <div class="type-sample">
+          <div class="type-label">text-base / 14px / 400</div>
+          <div style="font-size:14px;line-height:22px;font-weight:400;">Body text. Monospace everything. This is the default size for all content in the Forge design system.</div>
+        </div>
+        <div class="type-sample">
+          <div class="type-label">text-sm / 13px / 400</div>
+          <div style="font-size:13px;line-height:20px;font-weight:400;color:var(--fg-secondary);">Secondary text, labels, and table content.</div>
+        </div>
+        <div class="type-sample">
+          <div class="type-label">text-xs / 11px / 400</div>
+          <div style="font-size:11px;line-height:16px;font-weight:400;color:var(--fg-muted);">CAPTIONS, METADATA, STATUS BAR TEXT</div>
+        </div>
+      </section>
+
+      <!-- BUTTONS -->
+      <section class="section">
+        <h2 class="section-title">Buttons</h2>
+        <div class="button-row">
+          <button class="btn btn-primary">Deploy</button>
+          <button class="btn btn-secondary">Cancel</button>
+          <button class="btn btn-destructive">Delete</button>
+          <button class="btn btn-ghost">Skip</button>
+        </div>
+      </section>
+
+      <!-- INPUTS -->
+      <section class="section">
+        <h2 class="section-title">Inputs</h2>
+        <div class="input-group">
+          <label class="input-label">Project Name</label>
+          <input class="input-field" type="text" placeholder="my-project">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Description</label>
+          <textarea class="input-field" placeholder="Describe your project..."></textarea>
+        </div>
+      </section>
+
+      <!-- TABS -->
+      <section class="section">
+        <h2 class="section-title">Tabs</h2>
+        <div class="tab-bar">
+          <button class="tab active">Overview</button>
+          <button class="tab">Logs</button>
+          <button class="tab">Config</button>
+          <button class="tab">Deploy</button>
+        </div>
+      </section>
+
+      <!-- BADGES -->
+      <section class="section">
+        <h2 class="section-title">Badges</h2>
+        <div class="badge-row">
+          <span class="badge badge-success">Online</span>
+          <span class="badge badge-info">Building</span>
+          <span class="badge badge-warning">Degraded</span>
+          <span class="badge badge-error">Failed</span>
+          <span class="badge badge-neutral">Inactive</span>
+        </div>
+      </section>
+
+      <!-- TABLE -->
+      <section class="section">
+        <h2 class="section-title">Table</h2>
+        <div class="panel">
+          <div class="panel-header">Recent Deployments</div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Branch</th>
+                <th>Status</th>
+                <th>Duration</th>
+                <th>Timestamp</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="color:var(--accent-cyan);">#a7f3e1</td>
+                <td>main</td>
+                <td><span class="badge badge-success">Success</span></td>
+                <td>2m 14s</td>
+                <td>2026-04-01 09:32:01</td>
+              </tr>
+              <tr>
+                <td style="color:var(--accent-cyan);">#b8c4d2</td>
+                <td>feat/auth</td>
+                <td><span class="badge badge-error">Failed</span></td>
+                <td>0m 48s</td>
+                <td>2026-04-01 09:28:44</td>
+              </tr>
+              <tr>
+                <td style="color:var(--accent-cyan);">#c9d5e3</td>
+                <td>main</td>
+                <td><span class="badge badge-success">Success</span></td>
+                <td>1m 59s</td>
+                <td>2026-04-01 08:15:22</td>
+              </tr>
+              <tr>
+                <td style="color:var(--accent-cyan);">#d0e6f4</td>
+                <td>fix/api</td>
+                <td><span class="badge badge-info">Building</span></td>
+                <td>--</td>
+                <td>2026-04-01 08:12:00</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TERMINAL -->
+      <section class="section">
+        <h2 class="section-title">Terminal</h2>
+        <div class="terminal">
+          <div class="terminal-line"><span class="terminal-prompt">$ </span>forge deploy --env production</div>
+          <div class="terminal-line terminal-output">[i] Compiling assets...</div>
+          <div class="terminal-line terminal-output">[i] Running tests... 47/47 passed</div>
+          <div class="terminal-line terminal-output">[i] Building container image...</div>
+          <div class="terminal-line terminal-output">[i] Pushing to registry...</div>
+          <div class="terminal-line"><span class="terminal-prompt">$ </span>forge status</div>
+          <div class="terminal-line terminal-output">[x] Production: <span style="color:var(--accent-green);">HEALTHY</span></div>
+          <div class="terminal-line terminal-output">[ ] Staging: <span style="color:var(--accent-yellow);">DEPLOYING</span></div>
+          <div class="terminal-line"><span class="terminal-prompt">$ </span>forge logs --tail</div>
+          <div class="terminal-line terminal-error">[ERR] Connection timeout at 10.0.3.42:8080</div>
+          <div class="terminal-line terminal-error">[ERR] Retry 1/3...</div>
+          <div class="terminal-line terminal-output">[OK] Connection restored</div>
+        </div>
+      </section>
+
+      <!-- STATUS INDICATORS -->
+      <section class="section">
+        <h2 class="section-title">Status Indicators</h2>
+        <div style="display:flex;gap:var(--space-5);font-size:13px;">
+          <span><span class="status-dot online"></span> Online</span>
+          <span><span class="status-dot warning"></span> Warning</span>
+          <span><span class="status-dot error"></span> Error</span>
+          <span><span class="status-dot offline"></span> Offline</span>
+        </div>
+      </section>
+
+      <!-- ASCII ICONS -->
+      <section class="section">
+        <h2 class="section-title">Iconography (ASCII)</h2>
+        <div class="panel">
+          <div class="panel-header">Available Glyphs</div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Purpose</th>
+                <th>Glyph</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Close</td><td style="color:var(--accent-magenta);">x</td></tr>
+              <tr><td>Menu</td><td style="color:var(--accent-cyan);">===</td></tr>
+              <tr><td>Arrow Right</td><td style="color:var(--accent-green);">--></td></tr>
+              <tr><td>Arrow Left</td><td style="color:var(--accent-green);"><--</td></tr>
+              <tr><td>Expand</td><td style="color:var(--accent-cyan);">[+]</td></tr>
+              <tr><td>Collapse</td><td style="color:var(--accent-cyan);">[-]</td></tr>
+              <tr><td>Checked</td><td style="color:var(--accent-green);">[x]</td></tr>
+              <tr><td>Unchecked</td><td style="color:var(--fg-muted);">[ ]</td></tr>
+              <tr><td>Warning</td><td style="color:var(--accent-yellow);">/!\</td></tr>
+              <tr><td>Info</td><td style="color:var(--accent-cyan);">(i)</td></tr>
+              <tr><td>Loading</td><td style="color:var(--fg-secondary);">...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- STATUS BAR -->
+  <div class="status-bar">
+    <span><span class="status-dot online"></span> connected</span>
+    <span>|</span>
+    <span>main @ a7f3e1</span>
+    <span>|</span>
+    <span>3 services running</span>
+    <span style="margin-left:auto;">FORGE v0.1.0</span>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GitHub Primer Design System -- Light Mode Preview</title>
+<style>
+  /* ===== Reset ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ===== Tokens ===== */
+  :root {
+    --color-canvas-default: #ffffff;
+    --color-canvas-subtle: #f6f8fa;
+    --color-canvas-inset: #eff2f5;
+    --color-border-default: #d1d9e0;
+    --color-border-muted: #d8dee4;
+    --color-fg-default: #1f2328;
+    --color-fg-muted: #656d76;
+    --color-fg-subtle: #6e7781;
+    --color-accent-fg: #0969da;
+    --color-accent-emphasis: #0969da;
+    --color-accent-muted: #54aeff66;
+    --color-success-fg: #1a7f37;
+    --color-success-emphasis: #1f883d;
+    --color-danger-fg: #d1242f;
+    --color-danger-emphasis: #cf222e;
+    --color-attention-fg: #9a6700;
+    --color-attention-emphasis: #bf8700;
+    --color-done-fg: #8250df;
+    --color-neutral-emphasis: #6e7781;
+    --color-header-bg: #24292f;
+
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+    --radius-sm: 3px;
+    --radius-md: 6px;
+    --radius-lg: 12px;
+    --radius-full: 9999px;
+
+    --shadow-sm: 0 1px 0 rgba(31,35,40,0.04);
+    --shadow-md: 0 3px 6px rgba(140,149,159,0.15);
+    --shadow-lg: 0 8px 24px rgba(140,149,159,0.2);
+  }
+
+  /* ===== Base ===== */
+  body {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--color-fg-default);
+    background: var(--color-canvas-default);
+  }
+
+  /* ===== Header ===== */
+  .header {
+    background: var(--color-header-bg);
+    color: #ffffff;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 16px;
+  }
+  .header-logo svg { fill: #ffffff; }
+  .header-search {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: var(--radius-md);
+    padding: 5px 12px;
+    color: rgba(255,255,255,0.7);
+    font-size: 14px;
+    width: 280px;
+    outline: none;
+    font-family: var(--font-sans);
+  }
+  .header-search::placeholder { color: rgba(255,255,255,0.5); }
+  .header-nav { margin-left: auto; display: flex; gap: 16px; align-items: center; }
+  .header-nav a { color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 500; }
+  .header-nav a:hover { opacity: 0.8; }
+
+  /* ===== Page Container ===== */
+  .container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 32px 24px;
+  }
+
+  .page-title {
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1.25;
+    margin-bottom: 8px;
+  }
+  .page-subtitle {
+    font-size: 14px;
+    color: var(--color-fg-muted);
+    margin-bottom: 32px;
+  }
+
+  /* ===== Section ===== */
+  .section {
+    margin-bottom: 40px;
+  }
+  .section-title {
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.25;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--color-border-muted);
+  }
+
+  /* ===== Color Swatches ===== */
+  .swatch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+  }
+  .swatch {
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+  .swatch-color {
+    height: 48px;
+  }
+  .swatch-label {
+    padding: 8px;
+    font-size: 12px;
+    background: var(--color-canvas-default);
+  }
+  .swatch-label code {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-fg-muted);
+    display: block;
+    margin-top: 2px;
+  }
+
+  /* ===== Typography Showcase ===== */
+  .type-sample { margin-bottom: 12px; }
+  .type-sample .meta {
+    font-size: 12px;
+    color: var(--color-fg-muted);
+    font-family: var(--font-mono);
+    margin-bottom: 2px;
+  }
+  .type-h1 { font-size: 32px; font-weight: 600; line-height: 1.25; }
+  .type-h2 { font-size: 24px; font-weight: 600; line-height: 1.25; }
+  .type-h3 { font-size: 20px; font-weight: 600; line-height: 1.25; }
+  .type-h4 { font-size: 16px; font-weight: 600; line-height: 1.5; }
+  .type-body { font-size: 14px; font-weight: 400; line-height: 1.5; }
+  .type-small { font-size: 12px; font-weight: 400; line-height: 1.5; color: var(--color-fg-muted); }
+  .type-mono { font-size: 12px; font-family: var(--font-mono); line-height: 1.45; }
+
+  /* ===== Buttons ===== */
+  .btn-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 12px; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 16px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: var(--font-sans);
+    border-radius: var(--radius-md);
+    border: 1px solid transparent;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 80ms ease-in-out;
+  }
+  .btn-primary {
+    background: var(--color-accent-emphasis);
+    color: #ffffff;
+    box-shadow: var(--shadow-sm);
+  }
+  .btn-primary:hover { background: #0860ca; }
+  .btn-default {
+    background: var(--color-canvas-subtle);
+    color: var(--color-fg-default);
+    border-color: var(--color-border-default);
+    box-shadow: var(--shadow-sm);
+  }
+  .btn-default:hover { background: #eef1f4; }
+  .btn-danger {
+    background: var(--color-danger-emphasis);
+    color: #ffffff;
+    box-shadow: var(--shadow-sm);
+  }
+  .btn-danger:hover { background: #b91c1c; }
+  .btn-outline {
+    background: transparent;
+    color: var(--color-accent-fg);
+    border-color: var(--color-accent-fg);
+  }
+  .btn-outline:hover { background: #0969da0d; }
+  .btn-invisible {
+    background: transparent;
+    color: var(--color-accent-fg);
+    border: none;
+  }
+  .btn-invisible:hover { background: #0969da0d; }
+  .btn-sm {
+    height: 28px;
+    padding: 0 12px;
+    font-size: 12px;
+  }
+  .btn:disabled, .btn[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* ===== Form Inputs ===== */
+  .form-group { margin-bottom: 16px; max-width: 400px; }
+  .form-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .form-input {
+    width: 100%;
+    height: 32px;
+    padding: 5px 12px;
+    font-size: 14px;
+    font-family: var(--font-sans);
+    color: var(--color-fg-default);
+    background: var(--color-canvas-default);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-md);
+    outline: none;
+    transition: border-color 150ms ease-in-out, box-shadow 150ms ease-in-out;
+  }
+  .form-input:focus {
+    border-color: var(--color-accent-fg);
+    box-shadow: 0 0 0 3px var(--color-accent-muted);
+  }
+  .form-hint {
+    font-size: 12px;
+    color: var(--color-fg-muted);
+    margin-top: 4px;
+  }
+  .form-textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-family: var(--font-sans);
+    color: var(--color-fg-default);
+    background: var(--color-canvas-default);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-md);
+    outline: none;
+    resize: vertical;
+    transition: border-color 150ms ease-in-out, box-shadow 150ms ease-in-out;
+  }
+  .form-textarea:focus {
+    border-color: var(--color-accent-fg);
+    box-shadow: 0 0 0 3px var(--color-accent-muted);
+  }
+
+  /* ===== Cards ===== */
+  .card {
+    background: var(--color-canvas-default);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .card-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .card-title a {
+    color: var(--color-accent-fg);
+    text-decoration: none;
+  }
+  .card-title a:hover { text-decoration: underline; }
+  .card-desc {
+    font-size: 14px;
+    color: var(--color-fg-muted);
+    margin-bottom: 12px;
+  }
+  .card-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--color-fg-muted);
+    align-items: center;
+  }
+  .card-meta-item { display: inline-flex; align-items: center; gap: 4px; }
+
+  /* ===== Labels / Badges ===== */
+  .label-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .label {
+    display: inline-flex;
+    align-items: center;
+    height: 20px;
+    padding: 0 7px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: var(--radius-full);
+    white-space: nowrap;
+  }
+  .label-blue { background: #ddf4ff; color: #0969da; }
+  .label-green { background: #dafbe1; color: #1a7f37; }
+  .label-red { background: #ffebe9; color: #d1242f; }
+  .label-yellow { background: #fff8c5; color: #9a6700; }
+  .label-purple { background: #fbefff; color: #8250df; }
+  .label-gray { background: #eef1f4; color: #656d76; }
+
+  .counter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: var(--radius-full);
+    background: var(--color-neutral-emphasis);
+    color: #ffffff;
+  }
+
+  /* ===== Nav Tabs (UnderlineNav) ===== */
+  .underline-nav {
+    display: flex;
+    border-bottom: 1px solid var(--color-border-muted);
+    margin-bottom: 24px;
+    gap: 0;
+  }
+  .underline-nav-item {
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--color-fg-muted);
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: border-color 80ms;
+  }
+  .underline-nav-item:hover {
+    color: var(--color-fg-default);
+    border-bottom-color: var(--color-border-muted);
+  }
+  .underline-nav-item.active {
+    color: var(--color-fg-default);
+    font-weight: 600;
+    border-bottom-color: var(--color-accent-fg);
+  }
+
+  /* ===== Flash / Alerts ===== */
+  .flash {
+    padding: 12px 16px;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    margin-bottom: 12px;
+    border-left: 3px solid;
+  }
+  .flash-info { background: #ddf4ff; border-left-color: var(--color-accent-fg); color: #0550ae; }
+  .flash-success { background: #dafbe1; border-left-color: var(--color-success-fg); color: #116329; }
+  .flash-warning { background: #fff8c5; border-left-color: var(--color-attention-fg); color: #6c5200; }
+  .flash-danger { background: #ffebe9; border-left-color: var(--color-danger-fg); color: #82071e; }
+
+  /* ===== Avatars ===== */
+  .avatar-row { display: flex; gap: 16px; align-items: center; }
+  .avatar {
+    border-radius: 50%;
+    background: var(--color-canvas-inset);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-fg-muted);
+    font-weight: 600;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .avatar-sm { width: 20px; height: 20px; font-size: 10px; }
+  .avatar-md { width: 32px; height: 32px; font-size: 14px; }
+  .avatar-lg { width: 48px; height: 48px; font-size: 20px; }
+  .avatar-xl { width: 96px; height: 96px; font-size: 36px; }
+
+  /* ===== Code Block ===== */
+  .code-block {
+    background: var(--color-canvas-subtle);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.45;
+    overflow-x: auto;
+    color: var(--color-fg-default);
+  }
+  .inline-code {
+    background: var(--color-canvas-inset);
+    border-radius: var(--radius-sm);
+    padding: 2px 6px;
+    font-family: var(--font-mono);
+    font-size: 85%;
+  }
+
+  /* ===== Repo List Item ===== */
+  .repo-item {
+    padding: 24px 0;
+    border-bottom: 1px solid var(--color-border-muted);
+  }
+  .repo-item:first-child { padding-top: 0; }
+  .repo-name {
+    font-size: 20px;
+    font-weight: 600;
+  }
+  .repo-name a { color: var(--color-accent-fg); text-decoration: none; }
+  .repo-name a:hover { text-decoration: underline; }
+  .repo-desc { color: var(--color-fg-muted); margin: 4px 0 12px; }
+  .repo-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .repo-tag {
+    background: #ddf4ff;
+    color: var(--color-accent-fg);
+    padding: 0 10px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .repo-stats {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--color-fg-muted);
+    align-items: center;
+  }
+  .lang-dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="header-logo">
+    <svg height="32" viewBox="0 0 16 16" width="32"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"></path></svg>
+  </div>
+  <input type="text" class="header-search" placeholder="Type / to search" readonly>
+  <nav class="header-nav">
+    <a href="#">Pull requests</a>
+    <a href="#">Issues</a>
+    <a href="#">Marketplace</a>
+    <a href="#">Explore</a>
+  </nav>
+</header>
+
+<div class="container">
+  <h1 class="page-title">Primer Design System</h1>
+  <p class="page-subtitle">Light mode component preview -- GitHub's design language</p>
+
+  <!-- Nav Tabs -->
+  <section class="section">
+    <h2 class="section-title">Navigation Tabs</h2>
+    <nav class="underline-nav">
+      <a class="underline-nav-item active" href="#">Code <span class="counter">42</span></a>
+      <a class="underline-nav-item" href="#">Issues <span class="counter">12</span></a>
+      <a class="underline-nav-item" href="#">Pull requests <span class="counter">3</span></a>
+      <a class="underline-nav-item" href="#">Actions</a>
+      <a class="underline-nav-item" href="#">Projects</a>
+      <a class="underline-nav-item" href="#">Security</a>
+      <a class="underline-nav-item" href="#">Insights</a>
+    </nav>
+  </section>
+
+  <!-- Colors -->
+  <section class="section">
+    <h2 class="section-title">Color Palette</h2>
+    <div class="swatch-grid">
+      <div class="swatch">
+        <div class="swatch-color" style="background:#0969da"></div>
+        <div class="swatch-label">Accent<code>#0969da</code></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#1a7f37"></div>
+        <div class="swatch-label">Success<code>#1a7f37</code></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#d1242f"></div>
+        <div class="swatch-label">Danger<code>#d1242f</code></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#9a6700"></div>
+        <div class="swatch-label">Attention<code>#9a6700</code></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#8250df"></div>
+        <div class="swatch-label">Done<code>#8250df</code></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#6e7781"></div>
+        <div class="swatch-label">Neutral<code>#6e7781</code></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#1f2328"></div>
+        <div class="swatch-label">Foreground<code>#1f2328</code></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#f6f8fa"></div>
+        <div class="swatch-label">Subtle BG<code>#f6f8fa</code></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#d1d9e0"></div>
+        <div class="swatch-label">Border<code>#d1d9e0</code></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#24292f"></div>
+        <div class="swatch-label">Header<code>#24292f</code></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Typography -->
+  <section class="section">
+    <h2 class="section-title">Typography</h2>
+    <div class="type-sample"><div class="meta">h1 -- 32px / 600</div><div class="type-h1">Page Title Heading</div></div>
+    <div class="type-sample"><div class="meta">h2 -- 24px / 600</div><div class="type-h2">Section Heading</div></div>
+    <div class="type-sample"><div class="meta">h3 -- 20px / 600</div><div class="type-h3">Subsection Heading</div></div>
+    <div class="type-sample"><div class="meta">h4 -- 16px / 600</div><div class="type-h4">Card Title Heading</div></div>
+    <div class="type-sample"><div class="meta">body -- 14px / 400</div><div class="type-body">Body text used for paragraphs, descriptions, and general content across the interface.</div></div>
+    <div class="type-sample"><div class="meta">small -- 12px / 400</div><div class="type-small">Caption text for metadata, timestamps, and secondary information.</div></div>
+    <div class="type-sample"><div class="meta">mono -- 12px / monospace</div><div class="type-mono">const primer = { design: "system", version: "2.0" };</div></div>
+  </section>
+
+  <!-- Buttons -->
+  <section class="section">
+    <h2 class="section-title">Buttons</h2>
+    <div class="btn-row">
+      <button class="btn btn-primary">Primary</button>
+      <button class="btn btn-default">Default</button>
+      <button class="btn btn-danger">Danger</button>
+      <button class="btn btn-outline">Outline</button>
+      <button class="btn btn-invisible">Invisible</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary btn-sm">Small Primary</button>
+      <button class="btn btn-default btn-sm">Small Default</button>
+      <button class="btn btn-primary" disabled>Disabled</button>
+    </div>
+  </section>
+
+  <!-- Form Inputs -->
+  <section class="section">
+    <h2 class="section-title">Form Inputs</h2>
+    <div class="form-group">
+      <label class="form-label">Repository name</label>
+      <input type="text" class="form-input" placeholder="my-awesome-project">
+      <div class="form-hint">Great repository names are short and memorable.</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <textarea class="form-textarea" placeholder="A short description of the repository..."></textarea>
+    </div>
+  </section>
+
+  <!-- Labels & Badges -->
+  <section class="section">
+    <h2 class="section-title">Labels &amp; Badges</h2>
+    <div class="label-row">
+      <span class="label label-blue">enhancement</span>
+      <span class="label label-green">good first issue</span>
+      <span class="label label-red">bug</span>
+      <span class="label label-yellow">help wanted</span>
+      <span class="label label-purple">question</span>
+      <span class="label label-gray">duplicate</span>
+    </div>
+    <div class="label-row">
+      <span>Counter badges:</span>
+      <span class="counter">5</span>
+      <span class="counter">42</span>
+      <span class="counter">128</span>
+    </div>
+  </section>
+
+  <!-- Flash / Alerts -->
+  <section class="section">
+    <h2 class="section-title">Flash Messages</h2>
+    <div class="flash flash-info">This is an informational message about the current repository status.</div>
+    <div class="flash flash-success">Your changes have been successfully merged into the main branch.</div>
+    <div class="flash flash-warning">You are editing a file in a project you do not have write access to.</div>
+    <div class="flash flash-danger">This branch has conflicts that must be resolved before merging.</div>
+  </section>
+
+  <!-- Avatars -->
+  <section class="section">
+    <h2 class="section-title">Avatars</h2>
+    <div class="avatar-row">
+      <div class="avatar avatar-sm">A</div>
+      <span class="type-small">20px</span>
+      <div class="avatar avatar-md">B</div>
+      <span class="type-small">32px</span>
+      <div class="avatar avatar-lg">C</div>
+      <span class="type-small">48px</span>
+      <div class="avatar avatar-xl">D</div>
+      <span class="type-small">96px</span>
+    </div>
+  </section>
+
+  <!-- Cards / Repo List -->
+  <section class="section">
+    <h2 class="section-title">Repository Cards</h2>
+
+    <div class="repo-item">
+      <div class="repo-name"><a href="#">primer / design</a></div>
+      <div class="repo-desc">GitHub's design system -- the source of truth for colors, typography, spacing, and components.</div>
+      <div class="repo-tags">
+        <span class="repo-tag">design-system</span>
+        <span class="repo-tag">css</span>
+        <span class="repo-tag">react</span>
+      </div>
+      <div class="repo-stats">
+        <span class="card-meta-item"><span class="lang-dot" style="background:#f1e05a"></span> JavaScript</span>
+        <span class="card-meta-item">&#9733; 4,210</span>
+        <span class="card-meta-item">&#9741; 382</span>
+        <span class="card-meta-item">Updated 2 hours ago</span>
+      </div>
+    </div>
+
+    <div class="repo-item">
+      <div class="repo-name"><a href="#">primer / react</a></div>
+      <div class="repo-desc">An implementation of GitHub's Primer Design System as React components.</div>
+      <div class="repo-tags">
+        <span class="repo-tag">react</span>
+        <span class="repo-tag">components</span>
+      </div>
+      <div class="repo-stats">
+        <span class="card-meta-item"><span class="lang-dot" style="background:#3178c6"></span> TypeScript</span>
+        <span class="card-meta-item">&#9733; 2,890</span>
+        <span class="card-meta-item">&#9741; 510</span>
+        <span class="card-meta-item">Updated 5 hours ago</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Cards -->
+  <section class="section">
+    <h2 class="section-title">Info Cards</h2>
+    <div class="card">
+      <div class="card-title"><a href="#">Feature: Dark mode support</a></div>
+      <div class="card-desc">Implement automatic dark mode switching based on system preferences with manual override toggle.</div>
+      <div class="card-meta">
+        <span class="card-meta-item"><span class="label label-green" style="font-size:11px">open</span></span>
+        <span class="card-meta-item">#1234 opened 3 days ago by octocat</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><a href="#">Bug: Navigation overflow on mobile</a></div>
+      <div class="card-desc">Tab navigation items overflow the container on screens narrower than 544px.</div>
+      <div class="card-meta">
+        <span class="card-meta-item"><span class="label label-red" style="font-size:11px">bug</span></span>
+        <span class="card-meta-item">#1235 opened 1 day ago by monalisa</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Code Block -->
+  <section class="section">
+    <h2 class="section-title">Code Block</h2>
+    <div class="code-block"><pre>// Primer CSS custom properties usage
+.Button--primary {
+  background-color: var(--color-accent-emphasis);
+  color: var(--color-fg-onEmphasis);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 5px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  cursor: pointer;
+}</pre></div>
+    <p style="margin-top:12px">Inline code example: use <code class="inline-code">--color-accent-fg</code> for link colors.</p>
+  </section>
+
+  <!-- Spacing Reference -->
+  <section class="section">
+    <h2 class="section-title">Spacing Scale</h2>
+    <div style="display:flex; gap:8px; align-items:end; flex-wrap:wrap">
+      <div style="text-align:center"><div style="width:4px;height:4px;background:var(--color-accent-emphasis);border-radius:1px"></div><div class="type-small" style="margin-top:4px">4</div></div>
+      <div style="text-align:center"><div style="width:8px;height:8px;background:var(--color-accent-emphasis);border-radius:2px"></div><div class="type-small" style="margin-top:4px">8</div></div>
+      <div style="text-align:center"><div style="width:16px;height:16px;background:var(--color-accent-emphasis);border-radius:2px"></div><div class="type-small" style="margin-top:4px">16</div></div>
+      <div style="text-align:center"><div style="width:24px;height:24px;background:var(--color-accent-emphasis);border-radius:3px"></div><div class="type-small" style="margin-top:4px">24</div></div>
+      <div style="text-align:center"><div style="width:32px;height:32px;background:var(--color-accent-emphasis);border-radius:3px"></div><div class="type-small" style="margin-top:4px">32</div></div>
+      <div style="text-align:center"><div style="width:40px;height:40px;background:var(--color-accent-emphasis);border-radius:4px"></div><div class="type-small" style="margin-top:4px">40</div></div>
+      <div style="text-align:center"><div style="width:48px;height:48px;background:var(--color-accent-emphasis);border-radius:4px"></div><div class="type-small" style="margin-top:4px">48</div></div>
+      <div style="text-align:center"><div style="width:64px;height:64px;background:var(--color-accent-emphasis);border-radius:5px"></div><div class="type-small" style="margin-top:4px">64</div></div>
+    </div>
+  </section>
+
+</div>
+
+</body>
+</html>
