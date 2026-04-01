@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forge Design System — Preview (Light Reference)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'JetBrains Mono', Consolas, monospace; background: #e8e8e8; color: #0d0d0d; line-height: 1.65; font-size: 14px; }
+  .container { max-width: 960px; margin: 0 auto; padding: 0 16px; }
+  h1 { font-size: 36px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.15; text-transform: uppercase; margin-bottom: 8px; }
+  h2 { font-size: 22px; font-weight: 700; line-height: 1.25; margin: 48px 0 16px; text-transform: uppercase; letter-spacing: 0.02em; }
+  h3 { font-size: 18px; font-weight: 600; line-height: 1.30; margin: 24px 0 12px; text-transform: uppercase; }
+  p { color: #444; font-size: 14px; margin-bottom: 12px; }
+  .note { background: #fff; border: 1px solid #ccc; padding: 16px; margin-bottom: 32px; font-size: 13px; color: #666; }
+
+  .hero { background: #0d0d0d; padding: 48px 0; margin-bottom: 48px; }
+  .hero h1 { color: #00ff88; font-size: 48px; }
+  .hero p { color: #a0a0a0; }
+
+  .swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .swatch { border: 1px solid #ccc; overflow: hidden; }
+  .swatch-color { height: 64px; }
+  .swatch-info { padding: 8px; background: #fff; }
+  .swatch-name { font-size: 11px; font-weight: 600; text-transform: uppercase; }
+  .swatch-hex { font-size: 11px; color: #666; }
+
+  .type-sample { margin-bottom: 12px; padding: 12px; background: #fff; border: 1px solid #ccc; }
+  .type-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #666; margin-bottom: 4px; }
+
+  .btn-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .btn { display: inline-flex; align-items: center; padding: 8px 16px; font-size: 13px; font-weight: 600; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.04em; border: none; cursor: pointer; border-radius: 0; }
+  .btn-primary { background: #00ff88; color: #0d0d0d; }
+  .btn-secondary { background: transparent; color: #0d0d0d; border: 1px solid #444; }
+  .btn-ghost { background: transparent; color: #00e5ff; }
+  .btn-destructive { background: #ff3388; color: #0d0d0d; }
+
+  .card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+  .card { background: #fff; border: 1px solid #ccc; padding: 20px; }
+  .card h4 { font-size: 14px; font-weight: 600; text-transform: uppercase; margin-bottom: 8px; }
+  .card p { font-size: 13px; color: #666; }
+
+  .input-group { margin-bottom: 12px; max-width: 400px; }
+  .input-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #666; margin-bottom: 4px; display: block; }
+  .input { width: 100%; padding: 8px 12px; font-size: 14px; font-family: 'JetBrains Mono', monospace; border: 1px solid #ccc; border-radius: 0; color: #0d0d0d; background: #f5f5f5; outline: none; }
+  .input:focus { border-color: #00ff88; }
+
+  .terminal { background: #0d0d0d; border: 1px solid #2a2a2a; padding: 16px 20px; color: #e8e8e8; margin-bottom: 24px; }
+  .terminal .prompt { color: #00ff88; }
+  .terminal .output { color: #a0a0a0; }
+
+  .status-row { display: flex; gap: 24px; margin-bottom: 24px; }
+  .status-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .status-dot { width: 8px; height: 8px; display: inline-block; }
+
+  @media (max-width: 768px) { .card-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="container">
+    <h1>FORGE</h1>
+    <p>Light reference preview — Forge is dark-native, this is for documentation purposes only.</p>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="note">NOTE: Forge is a dark-mode-first design system. This light preview shows the color palette and components in a neutral context. See preview-dark.html for the canonical experience.</div>
+
+  <h2>Color Palette</h2>
+  <h3>Core</h3>
+  <div class="swatch-grid">
+    <div class="swatch"><div class="swatch-color" style="background:#0d0d0d"></div><div class="swatch-info"><div class="swatch-name">Void</div><div class="swatch-hex">#0d0d0d</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#161616"></div><div class="swatch-info"><div class="swatch-name">Surface</div><div class="swatch-hex">#161616</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#1e1e1e"></div><div class="swatch-info"><div class="swatch-name">Raised</div><div class="swatch-hex">#1e1e1e</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#080808"></div><div class="swatch-info"><div class="swatch-name">Inset</div><div class="swatch-hex">#080808</div></div></div>
+  </div>
+  <h3>Neon Accents</h3>
+  <div class="swatch-grid">
+    <div class="swatch"><div class="swatch-color" style="background:#00ff88"></div><div class="swatch-info"><div class="swatch-name">Electric Green</div><div class="swatch-hex">#00ff88</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#00e5ff"></div><div class="swatch-info"><div class="swatch-name">Cyan</div><div class="swatch-hex">#00e5ff</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#ffb300"></div><div class="swatch-info"><div class="swatch-name">Amber</div><div class="swatch-hex">#ffb300</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#ff3388"></div><div class="swatch-info"><div class="swatch-name">Magenta</div><div class="swatch-hex">#ff3388</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#aa66ff"></div><div class="swatch-info"><div class="swatch-name">Violet</div><div class="swatch-hex">#aa66ff</div></div></div>
+  </div>
+  <h3>Text & Borders</h3>
+  <div class="swatch-grid">
+    <div class="swatch"><div class="swatch-color" style="background:#e8e8e8"></div><div class="swatch-info"><div class="swatch-name">Bone</div><div class="swatch-hex">#e8e8e8</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#a0a0a0"></div><div class="swatch-info"><div class="swatch-name">Silver</div><div class="swatch-hex">#a0a0a0</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#666666"></div><div class="swatch-info"><div class="swatch-name">Dim</div><div class="swatch-hex">#666666</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#2a2a2a"></div><div class="swatch-info"><div class="swatch-name">Border</div><div class="swatch-hex">#2a2a2a</div></div></div>
+  </div>
+
+  <h2>Typography</h2>
+  <div class="type-sample"><div class="type-label">Display — 48px / 700 / Uppercase</div><div style="font-size:48px;font-weight:700;text-transform:uppercase;line-height:1.10;letter-spacing:-0.02em">FORGE</div></div>
+  <div class="type-sample"><div class="type-label">Section Heading — 28px / 700 / Uppercase</div><div style="font-size:28px;font-weight:700;text-transform:uppercase;line-height:1.20">DEPLOYMENT STATUS</div></div>
+  <div class="type-sample"><div class="type-label">Sub-heading — 22px / 600</div><div style="font-size:22px;font-weight:600;line-height:1.25;text-transform:uppercase">Build Pipeline</div></div>
+  <div class="type-sample"><div class="type-label">Body — 14px / 400</div><div style="font-size:14px;font-weight:400;line-height:1.65;color:#444">Forge compiles and deploys your application with zero configuration. Every build is reproducible and cached.</div></div>
+  <div class="type-sample"><div class="type-label">Label — 11px / 600 / Uppercase</div><div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#666">ENVIRONMENT</div></div>
+
+  <h2>Buttons</h2>
+  <div class="btn-row">
+    <button class="btn btn-primary">DEPLOY</button>
+    <button class="btn btn-secondary">CONFIGURE</button>
+    <button class="btn btn-ghost">VIEW LOGS</button>
+    <button class="btn btn-destructive">TERMINATE</button>
+  </div>
+
+  <h2>Cards</h2>
+  <div class="card-grid">
+    <div class="card"><h4>BUILD #1847</h4><p>Completed in 12.4s. All tests passed.</p></div>
+    <div class="card"><h4>BUILD #1846</h4><p>Failed at test stage. 2 assertions failed.</p></div>
+    <div class="card"><h4>BUILD #1845</h4><p>Completed in 14.1s. Deployed to staging.</p></div>
+  </div>
+
+  <h2>Inputs</h2>
+  <div class="input-group">
+    <label class="input-label">REPOSITORY URL</label>
+    <input class="input" type="text" placeholder="https://github.com/...">
+  </div>
+
+  <h2>Terminal Block</h2>
+  <div class="terminal">
+<span class="prompt">$ forge deploy --env production</span>
+<span class="output">
+Building... done (12.4s)
+Running tests... 47/47 passed
+Deploying to production... ✓
+<span style="color:#00ff88">Deploy complete. Live at https://app.example.com</span></span>
+  </div>
+
+  <h2>Status Indicators</h2>
+  <div class="status-row">
+    <div class="status-item"><span class="status-dot" style="background:#00ff88"></span> RUNNING</div>
+    <div class="status-item"><span class="status-dot" style="background:#ffb300"></span> PENDING</div>
+    <div class="status-item"><span class="status-dot" style="background:#ff3388"></span> FAILED</div>
+    <div class="status-item"><span class="status-dot" style="background:#666"></span> STOPPED</div>
+  </div>
+
+</div>
+<div style="height: 48px"></div>
+</body>
+</html>

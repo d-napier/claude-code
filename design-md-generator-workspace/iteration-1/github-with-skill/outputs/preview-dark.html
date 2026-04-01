@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GitHub (Primer) Design System — Preview (Dark)</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif; background: #0d1117; color: #e6edf3; line-height: 1.50; font-size: 14px; }
+  .container { max-width: 1012px; margin: 0 auto; padding: 0 24px; }
+  h2 { font-size: 24px; font-weight: 600; line-height: 1.25; margin: 32px 0 16px; color: #e6edf3; }
+  h3 { font-size: 16px; font-weight: 600; line-height: 1.50; margin: 24px 0 12px; color: #8b949e; }
+  p { color: #8b949e; margin-bottom: 12px; }
+
+  .header { background: #161b22; padding: 12px 24px; display: flex; align-items: center; gap: 16px; margin-bottom: 32px; border-bottom: 1px solid #30363d; }
+  .header svg { fill: #e6edf3; }
+  .header-search { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 5px 12px; color: #e6edf3; font-size: 14px; font-family: inherit; width: 280px; }
+  .header-search::placeholder { color: #8b949e; }
+  .header-link { color: #e6edf3; font-size: 14px; text-decoration: none; }
+
+  .swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .swatch { border-radius: 6px; overflow: hidden; border: 1px solid #30363d; }
+  .swatch-color { height: 64px; }
+  .swatch-info { padding: 8px 10px; background: #161b22; }
+  .swatch-name { font-size: 12px; font-weight: 600; color: #e6edf3; }
+  .swatch-hex { font-size: 12px; color: #8b949e; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+  .type-sample { margin-bottom: 10px; padding: 12px; background: #161b22; border: 1px solid #30363d; border-radius: 6px; }
+  .type-label { font-size: 11px; font-weight: 600; color: #8b949e; margin-bottom: 4px; }
+
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; padding: 5px 16px; font-size: 14px; font-weight: 500; font-family: inherit; border-radius: 6px; cursor: pointer; height: 32px; }
+  .btn-primary { background: #238636; color: #fff; border: 1px solid rgba(240,246,252,0.1); }
+  .btn-secondary { background: #21262d; color: #c9d1d9; border: 1px solid #30363d; }
+  .btn-danger { background: #da3633; color: #fff; border: 1px solid rgba(240,246,252,0.1); }
+  .btn-invisible { background: transparent; color: #4493f8; border: none; }
+
+  .card { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; margin-bottom: 16px; }
+  .card-row { padding: 12px 16px; border-bottom: 1px solid #21262d; display: flex; align-items: flex-start; gap: 12px; }
+  .card-row:last-child { border-bottom: none; }
+  .card-row:hover { background: rgba(177,186,196,0.12); }
+  .card-title { font-weight: 600; color: #4493f8; }
+  .card-meta { font-size: 12px; color: #8b949e; margin-top: 4px; }
+  .label { display: inline-block; padding: 2px 8px; border-radius: 16px; font-size: 12px; font-weight: 600; }
+  .label-blue { background: rgba(56,139,253,0.15); color: #4493f8; }
+  .label-green { background: rgba(46,160,67,0.15); color: #3fb950; }
+  .label-red { background: rgba(248,81,73,0.15); color: #f85149; }
+  .label-purple { background: rgba(163,113,247,0.15); color: #a371f7; }
+
+  .tab-nav { display: flex; border-bottom: 1px solid #30363d; margin-bottom: 24px; }
+  .tab { padding: 8px 16px; font-size: 14px; color: #8b949e; text-decoration: none; border-bottom: 2px solid transparent; }
+  .tab.active { color: #e6edf3; border-bottom-color: #f78166; }
+  .tab .counter { background: #30363d; border-radius: 16px; padding: 1px 8px; font-size: 12px; font-weight: 600; margin-left: 4px; color: #e6edf3; }
+
+  .input-group { margin-bottom: 12px; max-width: 400px; }
+  .input-label { font-size: 14px; font-weight: 600; color: #e6edf3; margin-bottom: 4px; display: block; }
+  .input { width: 100%; padding: 5px 12px; font-size: 14px; font-family: inherit; border: 1px solid #30363d; border-radius: 6px; color: #e6edf3; background: #010409; height: 32px; outline: none; }
+  .input:focus { border-color: #4493f8; box-shadow: 0 0 0 3px rgba(56,139,253,0.3); }
+  .input::placeholder { color: #484f58; }
+
+  .shadow-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+  .shadow-box { background: #161b22; border-radius: 6px; padding: 24px; text-align: center; }
+  .shadow-label { font-size: 12px; font-weight: 600; color: #8b949e; margin-top: 8px; }
+
+  @media (max-width: 768px) { .shadow-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <svg height="32" viewBox="0 0 16 16" width="32"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"></path></svg>
+  <input class="header-search" type="text" placeholder="Search or jump to...">
+  <a href="#" class="header-link">Pull requests</a>
+  <a href="#" class="header-link">Issues</a>
+</div>
+
+<div class="container">
+
+  <h2>Dark Mode Colors</h2>
+  <h3>Surfaces</h3>
+  <div class="swatch-grid">
+    <div class="swatch"><div class="swatch-color" style="background:#0d1117"></div><div class="swatch-info"><div class="swatch-name">Dark Canvas</div><div class="swatch-hex">#0d1117</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#161b22"></div><div class="swatch-info"><div class="swatch-name">Dark Subtle</div><div class="swatch-hex">#161b22</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#010409"></div><div class="swatch-info"><div class="swatch-name">Dark Inset</div><div class="swatch-hex">#010409</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#30363d"></div><div class="swatch-info"><div class="swatch-name">Border</div><div class="swatch-hex">#30363d</div></div></div>
+  </div>
+  <h3>Semantic</h3>
+  <div class="swatch-grid">
+    <div class="swatch"><div class="swatch-color" style="background:#4493f8"></div><div class="swatch-info"><div class="swatch-name">Blue</div><div class="swatch-hex">#4493f8</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#3fb950"></div><div class="swatch-info"><div class="swatch-name">Green</div><div class="swatch-hex">#3fb950</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#f85149"></div><div class="swatch-info"><div class="swatch-name">Red</div><div class="swatch-hex">#f85149</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#a371f7"></div><div class="swatch-info"><div class="swatch-name">Purple</div><div class="swatch-hex">#a371f7</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#d29922"></div><div class="swatch-info"><div class="swatch-name">Yellow</div><div class="swatch-hex">#d29922</div></div></div>
+  </div>
+
+  <h2>Typography</h2>
+  <div class="type-sample"><div class="type-label">Page Title — 32px / 600</div><div style="font-size:32px;font-weight:600;line-height:1.25">octocat/hello-world</div></div>
+  <div class="type-sample"><div class="type-label">Body — 14px / 400</div><div style="font-size:14px;line-height:1.50;color:#8b949e">GitHub is where over 100 million developers shape the future of software.</div></div>
+  <div class="type-sample"><div class="type-label">Code</div><div style="font-size:13px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#161b22;padding:4px 8px;border-radius:6px;border:1px solid #30363d;display:inline-block">npm install @primer/css</div></div>
+
+  <h2>Tabs</h2>
+  <div class="tab-nav">
+    <a class="tab active" href="#">Code</a>
+    <a class="tab" href="#">Issues <span class="counter">47</span></a>
+    <a class="tab" href="#">Pull requests <span class="counter">12</span></a>
+    <a class="tab" href="#">Actions</a>
+  </div>
+
+  <h2>Buttons</h2>
+  <div class="btn-row">
+    <button class="btn btn-primary">Primary</button>
+    <button class="btn btn-secondary">Default</button>
+    <button class="btn btn-danger">Danger</button>
+    <button class="btn btn-invisible">Invisible</button>
+  </div>
+
+  <h2>Issue List</h2>
+  <div class="card">
+    <div class="card-row">
+      <span style="color:#3fb950;font-size:16px">●</span>
+      <div>
+        <div class="card-title">Fix authentication flow for OAuth2 providers</div>
+        <div style="display:flex;gap:4px;margin-top:4px"><span class="label label-red">bug</span> <span class="label label-blue">auth</span></div>
+        <div class="card-meta">#1234 opened 3 days ago by octocat</div>
+      </div>
+    </div>
+    <div class="card-row">
+      <span style="color:#a371f7;font-size:16px">●</span>
+      <div>
+        <div class="card-title">Add dark mode support for markdown preview</div>
+        <div style="display:flex;gap:4px;margin-top:4px"><span class="label label-green">enhancement</span> <span class="label label-purple">design</span></div>
+        <div class="card-meta">#1233 closed 1 day ago by mona</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Inputs</h2>
+  <div class="input-group">
+    <label class="input-label">Repository name</label>
+    <input class="input" type="text" placeholder="my-awesome-project">
+  </div>
+
+  <h2>Labels</h2>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px">
+    <span class="label label-blue">documentation</span>
+    <span class="label label-green">good first issue</span>
+    <span class="label label-red">bug</span>
+    <span class="label label-purple">question</span>
+    <span class="label" style="background:rgba(210,153,34,0.15);color:#d29922">help wanted</span>
+  </div>
+
+</div>
+<div style="height: 48px"></div>
+</body>
+</html>

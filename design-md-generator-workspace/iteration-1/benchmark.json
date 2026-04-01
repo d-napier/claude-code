@@ -1,0 +1,206 @@
+{
+  "metadata": {
+    "skill_name": "design-md-generator",
+    "skill_path": "/home/user/claude-code/.claude/skills/design-md-generator",
+    "executor_model": "claude-opus-4-6",
+    "analyzer_model": "claude-opus-4-6",
+    "timestamp": "2026-04-01T14:45:00Z",
+    "evals_run": ["stripe", "forge", "github"],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "eval_name": "Stripe",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.90,
+        "passed": 9,
+        "failed": 1,
+        "total": 10,
+        "time_seconds": 0,
+        "tokens": 0,
+        "tool_calls": 5,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "All 9 numbered sections present", "passed": true, "evidence": "9/9 sections found"},
+        {"text": "15+ hex colors with semantic names", "passed": true, "evidence": "25 hex codes, 26 bold names"},
+        {"text": "Typography table 12+ rows", "passed": true, "evidence": "15 rows"},
+        {"text": "3+ button variants with specs", "passed": true, "evidence": "6 variants"},
+        {"text": "Elevation table 4+ levels", "passed": true, "evidence": "6 levels"},
+        {"text": "6+ Do and Don't items each", "passed": true, "evidence": "8 Do, 9 Don't"},
+        {"text": "preview.html exists", "passed": true, "evidence": "16492 chars"},
+        {"text": "preview-dark.html exists", "passed": true, "evidence": "8624 chars"},
+        {"text": "Internal color consistency", "passed": false, "evidence": "Some component colors not matching Section 2 names exactly"},
+        {"text": "Breakpoints table 3+ entries", "passed": true, "evidence": "5 entries"}
+      ]
+    },
+    {
+      "eval_id": 0,
+      "eval_name": "Stripe",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.60,
+        "passed": 6,
+        "failed": 4,
+        "total": 10,
+        "time_seconds": 717.5,
+        "tokens": 47560,
+        "tool_calls": 5,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "All 9 numbered sections present", "passed": true, "evidence": "9/9 sections found"},
+        {"text": "15+ hex colors with semantic names", "passed": false, "evidence": "18 hex codes but 0 bold semantic names"},
+        {"text": "Typography table 12+ rows", "passed": true, "evidence": "18 rows"},
+        {"text": "3+ button variants with specs", "passed": false, "evidence": "0 variants found"},
+        {"text": "Elevation table 4+ levels", "passed": true, "evidence": "7 levels"},
+        {"text": "6+ Do and Don't items each", "passed": false, "evidence": "0 Do, 0 Don't"},
+        {"text": "preview.html exists", "passed": true, "evidence": "24492 chars"},
+        {"text": "preview-dark.html exists", "passed": true, "evidence": "24257 chars"},
+        {"text": "Internal color consistency", "passed": true, "evidence": "Consistent"},
+        {"text": "Breakpoints table 3+ entries", "passed": false, "evidence": "0 entries"}
+      ]
+    },
+    {
+      "eval_id": 1,
+      "eval_name": "Forge",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.00,
+        "passed": 10,
+        "failed": 0,
+        "total": 10,
+        "time_seconds": 0,
+        "tokens": 0,
+        "tool_calls": 5,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "All 9 numbered sections present", "passed": true, "evidence": "9/9 sections found"},
+        {"text": "15+ hex colors with semantic names", "passed": true, "evidence": "22 hex codes, 19 bold names"},
+        {"text": "Typography table 12+ rows", "passed": true, "evidence": "13 rows"},
+        {"text": "3+ button variants with specs", "passed": true, "evidence": "5 variants"},
+        {"text": "Elevation table 4+ levels", "passed": true, "evidence": "4 levels"},
+        {"text": "6+ Do and Don't items each", "passed": true, "evidence": "8 Do, 10 Don't"},
+        {"text": "preview.html exists", "passed": true, "evidence": "9709 chars"},
+        {"text": "preview-dark.html exists", "passed": true, "evidence": "13353 chars"},
+        {"text": "Border radius 0px throughout", "passed": true, "evidence": "All radii 0px"},
+        {"text": "Monospace for all text roles", "passed": true, "evidence": "Single monospace font specified"}
+      ]
+    },
+    {
+      "eval_id": 1,
+      "eval_name": "Forge",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.40,
+        "passed": 4,
+        "failed": 6,
+        "total": 10,
+        "time_seconds": 283.4,
+        "tokens": 30350,
+        "tool_calls": 5,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "All 9 numbered sections present", "passed": true, "evidence": "11 sections found (non-standard numbering)"},
+        {"text": "15+ hex colors with semantic names", "passed": false, "evidence": "16 hex codes but 0 bold semantic names"},
+        {"text": "Typography table 12+ rows", "passed": false, "evidence": "7 rows"},
+        {"text": "3+ button variants with specs", "passed": false, "evidence": "0 variants found"},
+        {"text": "Elevation table 4+ levels", "passed": false, "evidence": "0 table rows"},
+        {"text": "6+ Do and Don't items each", "passed": false, "evidence": "0 Do, 0 Don't"},
+        {"text": "preview.html exists", "passed": true, "evidence": "20003 chars"},
+        {"text": "preview-dark.html exists", "passed": true, "evidence": "23117 chars"},
+        {"text": "Border radius 0px throughout", "passed": false, "evidence": "Non-zero radii found"},
+        {"text": "Monospace for all text roles", "passed": true, "evidence": "Monospace specified"}
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "GitHub",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.90,
+        "passed": 9,
+        "failed": 1,
+        "total": 10,
+        "time_seconds": 0,
+        "tokens": 0,
+        "tool_calls": 5,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "All 9 numbered sections present", "passed": true, "evidence": "9/9 sections found"},
+        {"text": "15+ hex colors with semantic names", "passed": true, "evidence": "26 hex codes, 24 bold names"},
+        {"text": "Typography table 12+ rows", "passed": true, "evidence": "14 rows"},
+        {"text": "3+ button variants with specs", "passed": true, "evidence": "6 variants"},
+        {"text": "Elevation table 4+ levels", "passed": true, "evidence": "4 levels"},
+        {"text": "6+ Do and Don't items each", "passed": true, "evidence": "8 Do, 9 Don't"},
+        {"text": "preview.html exists", "passed": true, "evidence": "15534 chars"},
+        {"text": "preview-dark.html exists", "passed": true, "evidence": "10306 chars"},
+        {"text": "Internal color consistency", "passed": false, "evidence": "Some component colors not matching Section 2 names exactly"},
+        {"text": "System font stack specified", "passed": true, "evidence": "System font stack found"}
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "GitHub",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.70,
+        "passed": 7,
+        "failed": 3,
+        "total": 10,
+        "time_seconds": 527.0,
+        "tokens": 53309,
+        "tool_calls": 5,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "All 9 numbered sections present", "passed": true, "evidence": "13 sections (non-standard numbering)"},
+        {"text": "15+ hex colors with semantic names", "passed": false, "evidence": "38 hex codes but 0 bold semantic names"},
+        {"text": "Typography table 12+ rows", "passed": true, "evidence": "13 rows"},
+        {"text": "3+ button variants with specs", "passed": false, "evidence": "0 variants found"},
+        {"text": "Elevation table 4+ levels", "passed": true, "evidence": "15 levels"},
+        {"text": "6+ Do and Don't items each", "passed": false, "evidence": "0 Do, 0 Don't"},
+        {"text": "preview.html exists", "passed": true, "evidence": "25484 chars"},
+        {"text": "preview-dark.html exists", "passed": true, "evidence": "25628 chars"},
+        {"text": "Internal color consistency", "passed": true, "evidence": "Consistent"},
+        {"text": "System font stack specified", "passed": true, "evidence": "System font stack found"}
+      ]
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {"mean": 0.93, "stddev": 0.05, "min": 0.90, "max": 1.00},
+      "time_seconds": {"mean": 0, "stddev": 0, "min": 0, "max": 0},
+      "tokens": {"mean": 0, "stddev": 0, "min": 0, "max": 0}
+    },
+    "without_skill": {
+      "pass_rate": {"mean": 0.57, "stddev": 0.13, "min": 0.40, "max": 0.70},
+      "time_seconds": {"mean": 509.3, "stddev": 180.0, "min": 283.4, "max": 717.5},
+      "tokens": {"mean": 43740, "stddev": 9600, "min": 30350, "max": 53309}
+    },
+    "delta": {
+      "pass_rate": "+0.36",
+      "time_seconds": "N/A (inline generation)",
+      "tokens": "N/A (inline generation)"
+    }
+  },
+  "notes": [
+    "With-skill pass rate: 93% avg vs without-skill: 57% avg — a +36 percentage point improvement",
+    "The skill's biggest impact is on formatting structure: bold semantic color names, button variant definitions with specs, Do's/Don'ts section structure, and breakpoints tables",
+    "Baseline runs consistently miss: bold semantic color naming (0/3), button variant formatting (0/3), and Do's/Don'ts structure (0/3)",
+    "Internal color consistency assertion failed for both Stripe and GitHub with-skill — the regex matching may need refinement, or the skill needs to emphasize exact name reuse",
+    "All 9 sections assertion passes for both configs — Claude inherently knows the 9-section structure even without the skill",
+    "Preview HTML generation succeeds in both configs — the skill's value is in DESIGN.md quality, not HTML generation"
+  ]
+}

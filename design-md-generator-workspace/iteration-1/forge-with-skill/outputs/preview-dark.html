@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forge Design System — Preview (Dark / Canonical)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'JetBrains Mono', Consolas, monospace; background: #0d0d0d; color: #e8e8e8; line-height: 1.65; font-size: 14px; }
+  .container { max-width: 960px; margin: 0 auto; padding: 0 16px; }
+  h2 { font-size: 22px; font-weight: 700; line-height: 1.25; margin: 48px 0 16px; text-transform: uppercase; letter-spacing: 0.02em; color: #e8e8e8; }
+  h3 { font-size: 18px; font-weight: 600; line-height: 1.30; margin: 24px 0 12px; text-transform: uppercase; color: #a0a0a0; }
+  p { color: #a0a0a0; font-size: 14px; margin-bottom: 12px; }
+
+  .nav { background: #0d0d0d; border-bottom: 1px solid #2a2a2a; padding: 0 16px; height: 48px; display: flex; align-items: center; gap: 24px; margin-bottom: 48px; }
+  .nav-logo { font-size: 16px; font-weight: 700; text-transform: uppercase; color: #00ff88; }
+  .nav a { color: #a0a0a0; font-size: 13px; text-decoration: none; }
+  .nav a:hover { color: #e8e8e8; }
+  .nav a.active { color: #e8e8e8; border-bottom: 2px solid #00ff88; padding-bottom: 12px; }
+
+  .hero { padding: 48px 0; margin-bottom: 48px; border-bottom: 1px solid #2a2a2a; }
+  .hero h1 { font-size: 48px; font-weight: 700; text-transform: uppercase; line-height: 1.10; letter-spacing: -0.02em; color: #00ff88; text-shadow: 0 0 8px rgba(0,255,136,0.3); }
+  .hero p { color: #666; font-size: 14px; margin-top: 8px; }
+
+  .swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .swatch { border: 1px solid #2a2a2a; overflow: hidden; }
+  .swatch-color { height: 64px; }
+  .swatch-info { padding: 8px; background: #161616; }
+  .swatch-name { font-size: 11px; font-weight: 600; text-transform: uppercase; color: #e8e8e8; }
+  .swatch-hex { font-size: 11px; color: #666; }
+
+  .type-sample { margin-bottom: 12px; padding: 12px; background: #161616; border: 1px solid #2a2a2a; }
+  .type-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #666; margin-bottom: 4px; }
+
+  .btn-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .btn { display: inline-flex; align-items: center; padding: 8px 16px; font-size: 13px; font-weight: 600; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.04em; border: none; cursor: pointer; border-radius: 0; transition: background 0.1s; }
+  .btn-primary { background: #00ff88; color: #0d0d0d; }
+  .btn-primary:hover { background: #00cc6e; }
+  .btn-secondary { background: transparent; color: #e8e8e8; border: 1px solid #444; }
+  .btn-secondary:hover { background: #1e1e1e; border-color: #666; }
+  .btn-ghost { background: transparent; color: #00e5ff; border: none; }
+  .btn-ghost:hover { background: rgba(0,229,255,0.08); }
+  .btn-destructive { background: #ff3388; color: #0d0d0d; }
+  .btn-destructive:hover { background: #dd2277; }
+
+  .card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+  .card { background: #161616; border: 1px solid #2a2a2a; padding: 20px; transition: border-color 0.1s; }
+  .card:hover { border-color: #444; }
+  .card h4 { font-size: 14px; font-weight: 600; text-transform: uppercase; margin-bottom: 8px; color: #e8e8e8; }
+  .card p { font-size: 13px; color: #666; }
+  .card .status { font-size: 12px; margin-top: 8px; }
+
+  .input-group { margin-bottom: 12px; max-width: 400px; }
+  .input-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #a0a0a0; margin-bottom: 4px; display: block; }
+  .input { width: 100%; padding: 8px 12px; font-size: 14px; font-family: 'JetBrains Mono', monospace; border: 1px solid #2a2a2a; border-radius: 0; color: #e8e8e8; background: #080808; outline: none; caret-color: #00ff88; }
+  .input:focus { border-color: #00ff88; }
+  .input::placeholder { color: #666; }
+
+  .terminal { background: #0d0d0d; border: 1px solid #2a2a2a; padding: 16px 20px; margin-bottom: 24px; }
+  .terminal .prompt { color: #00ff88; }
+  .terminal .output { color: #a0a0a0; }
+  .terminal .success { color: #00ff88; }
+  .terminal .error { color: #ff3388; }
+  .terminal .warn { color: #ffb300; }
+
+  .status-row { display: flex; gap: 24px; margin-bottom: 24px; }
+  .status-item { display: flex; align-items: center; gap: 8px; font-size: 13px; text-transform: uppercase; }
+  .status-dot { width: 8px; height: 8px; display: inline-block; }
+
+  table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+  th { background: #161616; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; text-align: left; padding: 10px 12px; border: 1px solid #2a2a2a; color: #a0a0a0; }
+  td { padding: 10px 12px; border: 1px solid #2a2a2a; font-size: 13px; }
+  tr:nth-child(odd) td { background: #0d0d0d; }
+  tr:nth-child(even) td { background: #080808; }
+  tr:hover td { border-left: 2px solid #00ff88; }
+
+  .elevation-demo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .elev-box { padding: 20px; text-align: center; border: 1px solid #2a2a2a; }
+  .elev-label { font-size: 11px; font-weight: 600; text-transform: uppercase; color: #666; }
+
+  @media (max-width: 768px) {
+    .card-grid { grid-template-columns: 1fr; }
+    .elevation-demo { grid-template-columns: repeat(2, 1fr); }
+    .hero h1 { font-size: 36px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <span class="nav-logo">FORGE</span>
+  <a href="#" class="active">DASHBOARD</a>
+  <a href="#">BUILDS</a>
+  <a href="#">DEPLOYS</a>
+  <a href="#">SETTINGS</a>
+</div>
+
+<div class="container">
+
+<div class="hero">
+  <h1>FORGE</h1>
+  <p>// THE CANONICAL DARK EXPERIENCE</p>
+</div>
+
+<h2>COLOR PALETTE</h2>
+<h3>SURFACES</h3>
+<div class="swatch-grid">
+  <div class="swatch"><div class="swatch-color" style="background:#0d0d0d"></div><div class="swatch-info"><div class="swatch-name">VOID</div><div class="swatch-hex">#0d0d0d</div></div></div>
+  <div class="swatch"><div class="swatch-color" style="background:#161616"></div><div class="swatch-info"><div class="swatch-name">SURFACE</div><div class="swatch-hex">#161616</div></div></div>
+  <div class="swatch"><div class="swatch-color" style="background:#1e1e1e"></div><div class="swatch-info"><div class="swatch-name">RAISED</div><div class="swatch-hex">#1e1e1e</div></div></div>
+  <div class="swatch"><div class="swatch-color" style="background:#080808"></div><div class="swatch-info"><div class="swatch-name">INSET</div><div class="swatch-hex">#080808</div></div></div>
+</div>
+<h3>NEON ACCENTS</h3>
+<div class="swatch-grid">
+  <div class="swatch"><div class="swatch-color" style="background:#00ff88"></div><div class="swatch-info"><div class="swatch-name">ELECTRIC GREEN</div><div class="swatch-hex">#00ff88</div></div></div>
+  <div class="swatch"><div class="swatch-color" style="background:#00e5ff"></div><div class="swatch-info"><div class="swatch-name">CYAN</div><div class="swatch-hex">#00e5ff</div></div></div>
+  <div class="swatch"><div class="swatch-color" style="background:#ffb300"></div><div class="swatch-info"><div class="swatch-name">AMBER</div><div class="swatch-hex">#ffb300</div></div></div>
+  <div class="swatch"><div class="swatch-color" style="background:#ff3388"></div><div class="swatch-info"><div class="swatch-name">MAGENTA</div><div class="swatch-hex">#ff3388</div></div></div>
+  <div class="swatch"><div class="swatch-color" style="background:#aa66ff"></div><div class="swatch-info"><div class="swatch-name">VIOLET</div><div class="swatch-hex">#aa66ff</div></div></div>
+</div>
+<h3>TEXT</h3>
+<div class="swatch-grid">
+  <div class="swatch"><div class="swatch-color" style="background:#e8e8e8"></div><div class="swatch-info"><div class="swatch-name">BONE</div><div class="swatch-hex">#e8e8e8</div></div></div>
+  <div class="swatch"><div class="swatch-color" style="background:#a0a0a0"></div><div class="swatch-info"><div class="swatch-name">SILVER</div><div class="swatch-hex">#a0a0a0</div></div></div>
+  <div class="swatch"><div class="swatch-color" style="background:#666666"></div><div class="swatch-info"><div class="swatch-name">DIM</div><div class="swatch-hex">#666666</div></div></div>
+  <div class="swatch"><div class="swatch-color" style="background:#333333"></div><div class="swatch-info"><div class="swatch-name">FAINT</div><div class="swatch-hex">#333333</div></div></div>
+</div>
+
+<h2>TYPOGRAPHY</h2>
+<div class="type-sample"><div class="type-label">DISPLAY — 48PX / 700 / UPPERCASE</div><div style="font-size:48px;font-weight:700;text-transform:uppercase;line-height:1.10;letter-spacing:-0.02em;color:#00ff88">FORGE</div></div>
+<div class="type-sample"><div class="type-label">SECTION — 28PX / 700 / UPPERCASE</div><div style="font-size:28px;font-weight:700;text-transform:uppercase;line-height:1.20">DEPLOYMENT STATUS</div></div>
+<div class="type-sample"><div class="type-label">SUB-HEADING — 22PX / 600</div><div style="font-size:22px;font-weight:600;line-height:1.25;text-transform:uppercase">BUILD PIPELINE</div></div>
+<div class="type-sample"><div class="type-label">BODY — 14PX / 400</div><div style="font-size:14px;line-height:1.65;color:#a0a0a0">Forge compiles and deploys your application with zero configuration. Every build is reproducible and cached.</div></div>
+<div class="type-sample"><div class="type-label">CAPTION — 12PX / 400</div><div style="font-size:12px;color:#666;letter-spacing:0.02em">Last deployed 3 minutes ago by forge-ci</div></div>
+<div class="type-sample"><div class="type-label">LABEL — 11PX / 600 / UPPERCASE</div><div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#a0a0a0">ENVIRONMENT</div></div>
+
+<h2>BUTTONS</h2>
+<div class="btn-row">
+  <button class="btn btn-primary">DEPLOY</button>
+  <button class="btn btn-secondary">CONFIGURE</button>
+  <button class="btn btn-ghost">VIEW LOGS</button>
+  <button class="btn btn-destructive">TERMINATE</button>
+</div>
+
+<h2>CARDS</h2>
+<div class="card-grid">
+  <div class="card">
+    <h4>BUILD #1847</h4>
+    <p>Completed in 12.4s. All 47 tests passed.</p>
+    <div class="status" style="color:#00ff88">■ PASSED</div>
+  </div>
+  <div class="card">
+    <h4>BUILD #1846</h4>
+    <p>Failed at test stage. 2/47 assertions failed.</p>
+    <div class="status" style="color:#ff3388">■ FAILED</div>
+  </div>
+  <div class="card">
+    <h4>BUILD #1845</h4>
+    <p>Completed in 14.1s. Deployed to staging.</p>
+    <div class="status" style="color:#ffb300">■ DEPLOYING</div>
+  </div>
+</div>
+
+<h2>INPUTS</h2>
+<div class="input-group">
+  <label class="input-label">REPOSITORY URL</label>
+  <input class="input" type="text" placeholder="https://github.com/...">
+</div>
+<div class="input-group">
+  <label class="input-label">BRANCH</label>
+  <input class="input" type="text" placeholder="main">
+</div>
+
+<h2>TERMINAL BLOCK</h2>
+<div class="terminal">
+<span class="prompt">$ forge deploy --env production</span>
+<span class="output">
+Building... done (12.4s)
+Running tests... 47/47 passed
+Deploying to production...
+</span><span class="success">✓ Deploy complete. Live at https://app.example.com</span>
+</div>
+
+<div class="terminal">
+<span class="prompt">$ forge deploy --env staging</span>
+<span class="output">
+Building... done (8.2s)
+Running tests...
+</span><span class="error">✗ 2 tests failed:
+  - test_auth_flow: expected 200, got 401
+  - test_payment: timeout after 30s</span>
+<span class="warn">
+⚠ Deploy aborted. Fix failing tests first.</span>
+</div>
+
+<h2>STATUS INDICATORS</h2>
+<div class="status-row">
+  <div class="status-item"><span class="status-dot" style="background:#00ff88"></span> RUNNING</div>
+  <div class="status-item"><span class="status-dot" style="background:#ffb300"></span> PENDING</div>
+  <div class="status-item"><span class="status-dot" style="background:#ff3388"></span> FAILED</div>
+  <div class="status-item"><span class="status-dot" style="background:#666"></span> STOPPED</div>
+</div>
+
+<h2>DATA TABLE</h2>
+<table>
+  <thead>
+    <tr><th>SERVICE</th><th>STATUS</th><th>UPTIME</th><th>REGION</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>api-gateway</td><td style="color:#00ff88">● HEALTHY</td><td>99.97%</td><td>us-east-1</td></tr>
+    <tr><td>auth-service</td><td style="color:#00ff88">● HEALTHY</td><td>99.99%</td><td>us-east-1</td></tr>
+    <tr><td>payment-worker</td><td style="color:#ffb300">● DEGRADED</td><td>98.2%</td><td>eu-west-1</td></tr>
+    <tr><td>cdn-edge</td><td style="color:#00ff88">● HEALTHY</td><td>100%</td><td>global</td></tr>
+  </tbody>
+</table>
+
+<h2>ELEVATION (BACKGROUND ONLY)</h2>
+<div class="elevation-demo">
+  <div class="elev-box" style="background:#080808"><div class="elev-label">INSET<br>#080808</div></div>
+  <div class="elev-box" style="background:#0d0d0d"><div class="elev-label">VOID<br>#0d0d0d</div></div>
+  <div class="elev-box" style="background:#161616"><div class="elev-label">SURFACE<br>#161616</div></div>
+  <div class="elev-box" style="background:#1e1e1e"><div class="elev-label">RAISED<br>#1e1e1e</div></div>
+</div>
+
+</div>
+<div style="height: 48px"></div>
+</body>
+</html>

@@ -4,20 +4,56 @@
     {
       "id": 0,
       "prompt": "Generate a DESIGN.md for Stripe based on their website at stripe.com. I want the full 9-section Stitch format with preview HTML files.",
-      "expected_output": "A comprehensive DESIGN.md following the 9-section Stitch format with Stripe's color palette (blues, purples, dark backgrounds), typography (custom fonts), component styles, plus preview.html and preview-dark.html files.",
-      "files": []
+      "expected_output": "A comprehensive DESIGN.md following the 9-section Stitch format with Stripe's color palette, typography, component styles, plus preview.html and preview-dark.html files.",
+      "files": [],
+      "expectations": [
+        "DESIGN.md contains all 9 numbered sections (1-9) with correct headers",
+        "Section 2 defines at least 15 unique hex color codes with semantic names in bold",
+        "Section 3 contains a markdown table with at least 12 rows covering typography hierarchy",
+        "Section 4 defines at least 3 distinct button variants with specific padding, radius, and color values",
+        "Section 6 contains an elevation table with at least 4 levels and CSS box-shadow strings",
+        "Section 7 contains at least 6 Do items and 6 Don't items",
+        "preview.html file exists and is valid self-contained HTML",
+        "preview-dark.html file exists and is valid self-contained HTML",
+        "Colors referenced in Section 4 components use semantic names that appear in Section 2",
+        "Section 8 contains a breakpoints table with at least 3 entries"
+      ]
     },
     {
       "id": 1,
       "prompt": "Create a DESIGN.md for a brutalist dark-mode developer tool called 'Forge'. Think monospace everything, high contrast, neon accents on near-black backgrounds, no rounded corners, minimal decoration. It should feel like a terminal had a baby with a design system.",
-      "expected_output": "A DESIGN.md with a brutalist aesthetic: monospace fonts, sharp corners (0px radius), high-contrast neon-on-dark palette, minimal shadows, dense spacing. Should feel intentionally raw and technical. Plus preview HTML files.",
-      "files": []
+      "expected_output": "A DESIGN.md with a brutalist aesthetic: monospace fonts, sharp corners (0px radius), high-contrast neon-on-dark palette, minimal shadows, dense spacing. Plus preview HTML files.",
+      "files": [],
+      "expectations": [
+        "DESIGN.md contains all 9 numbered sections (1-9) with correct headers",
+        "Section 2 defines at least 15 unique hex color codes with semantic names in bold",
+        "Section 3 contains a markdown table with at least 12 rows covering typography hierarchy",
+        "Section 4 defines at least 3 distinct button variants with specific padding, radius, and color values",
+        "Section 6 contains an elevation table with at least 4 levels",
+        "Section 7 contains at least 6 Do items and 6 Don't items",
+        "preview.html file exists and is valid self-contained HTML",
+        "preview-dark.html file exists and is valid self-contained HTML",
+        "Border radius values are 0px throughout (brutalist requirement)",
+        "Section 3 specifies monospace font family for all text roles"
+      ]
     },
     {
       "id": 2,
       "prompt": "I need a DESIGN.md for GitHub's design system. Use their Primer design language as the basis — the clean, functional look with their blue accent, muted backgrounds, and system font stack.",
-      "expected_output": "A DESIGN.md based on GitHub's Primer design system: system font stack, GitHub blue (#0969da), muted gray surfaces, functional/utilitarian aesthetic. Should reference real Primer patterns. Plus preview HTML files.",
-      "files": []
+      "expected_output": "A DESIGN.md based on GitHub's Primer design system: system font stack, GitHub blue, muted gray surfaces, functional aesthetic. Plus preview HTML files.",
+      "files": [],
+      "expectations": [
+        "DESIGN.md contains all 9 numbered sections (1-9) with correct headers",
+        "Section 2 defines at least 15 unique hex color codes with semantic names in bold",
+        "Section 3 contains a markdown table with at least 12 rows covering typography hierarchy",
+        "Section 4 defines at least 3 distinct button variants with specific padding, radius, and color values",
+        "Section 6 contains an elevation table with at least 4 levels",
+        "Section 7 contains at least 6 Do items and 6 Don't items",
+        "preview.html file exists and is valid self-contained HTML",
+        "preview-dark.html file exists and is valid self-contained HTML",
+        "Colors referenced in Section 4 components use semantic names that appear in Section 2",
+        "Section 3 specifies system font stack (not custom web fonts)"
+      ]
     }
   ]
 }

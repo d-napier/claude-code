@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stripe Design System — Preview (Dark)</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Ubuntu, sans-serif; background: #0a2540; color: #e3e8ee; line-height: 1.60; }
+  .container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  h1 { font-size: 48px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.10; margin-bottom: 8px; color: #fff; }
+  h2 { font-size: 28px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.25; margin: 64px 0 24px; color: #fff; }
+  h3 { font-size: 20px; font-weight: 600; line-height: 1.35; margin: 32px 0 16px; color: #c1c9d2; }
+  p { color: #c1c9d2; font-size: 16px; margin-bottom: 16px; }
+  .hero { background: linear-gradient(135deg, rgba(99,91,255,0.3) 0%, rgba(0,212,255,0.15) 50%, rgba(255,128,181,0.2) 100%); padding: 80px 0; text-align: center; margin-bottom: 64px; }
+  .hero h1 { font-size: 64px; letter-spacing: -0.04em; }
+  .hero .gradient-text { background: linear-gradient(135deg, #635bff 0%, #00d4ff 50%, #ff80b5 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .hero p { color: #c1c9d2; font-size: 18px; max-width: 600px; margin: 16px auto 0; }
+
+  .swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  .swatch { border-radius: 8px; overflow: hidden; background: #1a3a5c; border: 1px solid rgba(255,255,255,0.1); }
+  .swatch-color { height: 80px; }
+  .swatch-info { padding: 10px 12px; }
+  .swatch-name { font-size: 13px; font-weight: 600; color: #e3e8ee; }
+  .swatch-hex { font-size: 12px; color: #8898aa; font-family: 'JetBrains Mono', Menlo, monospace; }
+
+  .type-sample { margin-bottom: 16px; padding: 16px; background: #1a3a5c; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; }
+  .type-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #8898aa; margin-bottom: 4px; }
+
+  .btn-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; padding: 8px 16px; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; border-radius: 6px; border: none; cursor: pointer; }
+  .btn-primary { background: #635bff; color: #fff; box-shadow: 0 1px 1px rgba(0,0,0,0.2), 0 1px 3px rgba(0,0,0,0.3); }
+  .btn-secondary { background: #1a3a5c; color: #e3e8ee; border: 1px solid rgba(255,255,255,0.15); }
+  .btn-ghost { background: transparent; color: #635bff; }
+  .btn-destructive { background: #df1b41; color: #fff; }
+
+  .card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 32px; }
+  .card { background: #1a3a5c; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 24px; }
+  .card.featured { border-top: 3px solid #635bff; }
+  .card h4 { font-size: 20px; font-weight: 600; margin-bottom: 8px; color: #fff; }
+  .card p { font-size: 14px; color: #8898aa; }
+
+  .input-group { margin-bottom: 16px; max-width: 400px; }
+  .input-label { font-size: 12px; font-weight: 600; color: #c1c9d2; margin-bottom: 4px; display: block; }
+  .input { width: 100%; padding: 8px 12px; font-size: 14px; font-family: inherit; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #e3e8ee; background: #0a2540; outline: none; }
+  .input:focus { border-color: #635bff; box-shadow: 0 0 0 3px rgba(99, 91, 255, 0.35); }
+  .input::placeholder { color: #697386; }
+
+  .code-block { background: #1a1f36; border: 1px solid #2a4a6c; border-radius: 8px; padding: 20px 24px; font-family: 'JetBrains Mono', Menlo, monospace; font-size: 14px; line-height: 1.55; color: #e3e8ee; }
+  .code-keyword { color: #00d4ff; }
+  .code-string { color: #ff80b5; }
+  .code-comment { color: #697386; }
+
+  .shadow-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .shadow-box { background: #1a3a5c; border-radius: 8px; padding: 24px; text-align: center; }
+  .shadow-label { font-size: 13px; font-weight: 600; color: #c1c9d2; margin-top: 8px; }
+
+  .radius-row { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 32px; }
+  .radius-box { width: 64px; height: 64px; background: #635bff; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 600; }
+
+  @media (max-width: 768px) {
+    .card-grid { grid-template-columns: 1fr; }
+    .shadow-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 36px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="container">
+    <h1><span class="gradient-text">Stripe Design System</span></h1>
+    <p>Dark mode preview — the canonical Stripe dark experience built on Navy Deep.</p>
+  </div>
+</div>
+
+<div class="container">
+
+  <h2>Color Palette</h2>
+  <h3>Dark Surfaces</h3>
+  <div class="swatch-grid">
+    <div class="swatch"><div class="swatch-color" style="background:#0a2540"></div><div class="swatch-info"><div class="swatch-name">Navy Deep</div><div class="swatch-hex">#0a2540</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#1a3a5c"></div><div class="swatch-info"><div class="swatch-name">Navy Mid</div><div class="swatch-hex">#1a3a5c</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#2a4a6c"></div><div class="swatch-info"><div class="swatch-name">Navy Light</div><div class="swatch-hex">#2a4a6c</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#635bff"></div><div class="swatch-info"><div class="swatch-name">Stripe Blurple</div><div class="swatch-hex">#635bff</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#00d4ff"></div><div class="swatch-info"><div class="swatch-name">Cyan Bright</div><div class="swatch-hex">#00d4ff</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#ff80b5"></div><div class="swatch-info"><div class="swatch-name">Pink Accent</div><div class="swatch-hex">#ff80b5</div></div></div>
+  </div>
+
+  <h2>Typography</h2>
+  <div class="type-sample"><div class="type-label">Display — 64px / 700</div><div style="font-size:48px;font-weight:700;letter-spacing:-0.03em;line-height:1.10;color:#fff">Financial infrastructure</div></div>
+  <div class="type-sample"><div class="type-label">Body Large — 18px / 400</div><div style="font-size:18px;font-weight:400;line-height:1.60;color:#c1c9d2">Stripe powers millions of businesses in over 120 countries.</div></div>
+  <div class="type-sample"><div class="type-label">Caption — 13px / 400</div><div style="font-size:13px;color:#8898aa">Last updated 3 minutes ago</div></div>
+
+  <h2>Buttons</h2>
+  <div class="btn-row">
+    <button class="btn btn-primary">Primary Action</button>
+    <button class="btn btn-secondary">Secondary</button>
+    <button class="btn btn-ghost">Ghost Link</button>
+    <button class="btn btn-destructive">Delete</button>
+  </div>
+
+  <h2>Cards</h2>
+  <div class="card-grid">
+    <div class="card"><h4>Starter</h4><p>Perfect for small businesses getting started.</p></div>
+    <div class="card featured"><h4>Growth</h4><p>Advanced tools for scaling businesses.</p></div>
+    <div class="card"><h4>Enterprise</h4><p>Custom solutions for large organizations.</p></div>
+  </div>
+
+  <h2>Inputs</h2>
+  <div class="input-group">
+    <label class="input-label">Email address</label>
+    <input class="input" type="email" placeholder="you@company.com">
+  </div>
+
+  <h2>Code Block</h2>
+  <div class="code-block">
+<span class="code-comment">// Create a payment intent</span>
+<span class="code-keyword">const</span> paymentIntent = <span class="code-keyword">await</span> stripe.paymentIntents.create({
+  amount: <span class="code-string">2000</span>,
+  currency: <span class="code-string">'usd'</span>,
+});
+  </div>
+
+  <h2>Elevation</h2>
+  <div class="shadow-grid">
+    <div class="shadow-box" style="box-shadow: 0 1px 1px rgba(0,0,0,0.2), 0 1px 3px rgba(0,0,0,0.3)"><div class="shadow-label">Low</div></div>
+    <div class="shadow-box" style="box-shadow: 0 2px 4px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.25)"><div class="shadow-label">Card</div></div>
+    <div class="shadow-box" style="box-shadow: 0 8px 16px rgba(0,0,0,0.25), 0 16px 48px rgba(0,0,0,0.35)"><div class="shadow-label">Overlay</div></div>
+  </div>
+
+</div>
+<div style="height: 80px"></div>
+</body>
+</html>

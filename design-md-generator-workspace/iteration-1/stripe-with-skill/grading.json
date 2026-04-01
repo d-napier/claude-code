@@ -1,0 +1,60 @@
+{
+  "expectations": [
+    {
+      "text": "DESIGN.md contains all 9 numbered sections (1-9) with correct headers",
+      "passed": true,
+      "evidence": "Found sections: [1, 2, 3, 4, 5, 6, 7, 8, 9] (9/9)"
+    },
+    {
+      "text": "Section 2 defines at least 15 unique hex color codes with semantic names in bold",
+      "passed": true,
+      "evidence": "Found 25 unique hex codes, 26 with bold semantic names"
+    },
+    {
+      "text": "Section 3 contains a markdown table with at least 12 rows covering typography hierarchy",
+      "passed": true,
+      "evidence": "Typography table has 15 data rows"
+    },
+    {
+      "text": "Section 4 defines at least 3 distinct button variants with specific padding, radius, and color values",
+      "passed": true,
+      "evidence": "Found 6 button variant definitions"
+    },
+    {
+      "text": "Section 6 contains an elevation table with at least 4 levels and CSS box-shadow strings",
+      "passed": true,
+      "evidence": "Elevation table has 6 rows"
+    },
+    {
+      "text": "Section 7 contains at least 6 Do items and 6 Don't items",
+      "passed": true,
+      "evidence": "Do: 8 items, Don't: 9 items"
+    },
+    {
+      "text": "preview.html file exists and is valid self-contained HTML",
+      "passed": true,
+      "evidence": "preview.html: 16492 chars, valid HTML: True"
+    },
+    {
+      "text": "preview-dark.html file exists and is valid self-contained HTML",
+      "passed": true,
+      "evidence": "preview-dark.html: 8624 chars, valid HTML: True"
+    },
+    {
+      "text": "Colors referenced in Section 4 components use semantic names that appear in Section 2",
+      "passed": false,
+      "evidence": "Internal color consistency: False"
+    },
+    {
+      "text": "Section 8 contains a breakpoints table with at least 3 entries",
+      "passed": true,
+      "evidence": "Breakpoints table has 5 entries"
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 1,
+    "total": 10,
+    "pass_rate": 0.9
+  }
+}

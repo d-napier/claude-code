@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GitHub (Primer) Design System — Preview (Light)</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif; background: #ffffff; color: #1f2328; line-height: 1.50; font-size: 14px; }
+  .container { max-width: 1012px; margin: 0 auto; padding: 0 24px; }
+  h2 { font-size: 24px; font-weight: 600; line-height: 1.25; margin: 32px 0 16px; }
+  h3 { font-size: 16px; font-weight: 600; line-height: 1.50; margin: 24px 0 12px; color: #656d76; }
+  p { color: #656d76; margin-bottom: 12px; }
+
+  .header { background: #24292f; padding: 12px 24px; display: flex; align-items: center; gap: 16px; margin-bottom: 32px; }
+  .header svg { fill: #fff; }
+  .header-search { background: #24292f; border: 1px solid #57606a; border-radius: 6px; padding: 5px 12px; color: #fff; font-size: 14px; font-family: inherit; width: 280px; }
+  .header-search::placeholder { color: #8b949e; }
+  .header-link { color: #fff; font-size: 14px; text-decoration: none; }
+
+  .swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .swatch { border-radius: 6px; overflow: hidden; border: 1px solid #d0d7de; }
+  .swatch-color { height: 64px; }
+  .swatch-info { padding: 8px 10px; }
+  .swatch-name { font-size: 12px; font-weight: 600; color: #1f2328; }
+  .swatch-hex { font-size: 12px; color: #656d76; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+  .type-sample { margin-bottom: 10px; padding: 12px; background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 6px; }
+  .type-label { font-size: 11px; font-weight: 600; color: #656d76; margin-bottom: 4px; }
+
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; padding: 5px 16px; font-size: 14px; font-weight: 500; font-family: inherit; border-radius: 6px; cursor: pointer; height: 32px; line-height: 1.15; }
+  .btn-primary { background: #0969da; color: #fff; border: 1px solid rgba(27,31,36,0.15); box-shadow: 0 1px 0 rgba(27,31,36,0.04); }
+  .btn-primary:hover { background: #0860ca; }
+  .btn-secondary { background: #f6f8fa; color: #1f2328; border: 1px solid #d0d7de; box-shadow: 0 1px 0 rgba(27,31,36,0.04); }
+  .btn-secondary:hover { background: #f3f4f6; }
+  .btn-danger { background: #d1242f; color: #fff; border: 1px solid rgba(27,31,36,0.15); }
+  .btn-invisible { background: transparent; color: #0969da; border: none; }
+  .btn-invisible:hover { background: rgba(208,215,222,0.32); }
+
+  .card { background: #fff; border: 1px solid #d0d7de; border-radius: 6px; margin-bottom: 16px; }
+  .card-header { padding: 16px; border-bottom: 1px solid #d8dee4; font-weight: 600; }
+  .card-row { padding: 12px 16px; border-bottom: 1px solid #d8dee4; display: flex; align-items: flex-start; gap: 12px; }
+  .card-row:last-child { border-bottom: none; }
+  .card-row:hover { background: rgba(208,215,222,0.32); }
+  .card-title { font-weight: 600; color: #0969da; }
+  .card-meta { font-size: 12px; color: #656d76; margin-top: 4px; }
+  .label { display: inline-block; padding: 2px 8px; border-radius: 16px; font-size: 12px; font-weight: 600; }
+  .label-blue { background: #ddf4ff; color: #0969da; }
+  .label-green { background: #dafbe1; color: #1a7f37; }
+  .label-red { background: #ffebe9; color: #d1242f; }
+  .label-purple { background: #fbefff; color: #8250df; }
+
+  .tab-nav { display: flex; border-bottom: 1px solid #d0d7de; margin-bottom: 24px; gap: 0; }
+  .tab { padding: 8px 16px; font-size: 14px; color: #656d76; text-decoration: none; border-bottom: 2px solid transparent; }
+  .tab:hover { color: #1f2328; }
+  .tab.active { color: #1f2328; border-bottom-color: #fd8c73; }
+  .tab .counter { background: #eff2f5; border-radius: 16px; padding: 1px 8px; font-size: 12px; font-weight: 600; margin-left: 4px; }
+
+  .input-group { margin-bottom: 12px; max-width: 400px; }
+  .input-label { font-size: 14px; font-weight: 600; color: #1f2328; margin-bottom: 4px; display: block; }
+  .input { width: 100%; padding: 5px 12px; font-size: 14px; font-family: inherit; border: 1px solid #d0d7de; border-radius: 6px; color: #1f2328; height: 32px; outline: none; }
+  .input:focus { border-color: #0969da; box-shadow: 0 0 0 3px rgba(9,105,218,0.3); }
+  .input::placeholder { color: #818b98; }
+
+  .lang-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; vertical-align: middle; }
+  .icon-open { color: #1a7f37; }
+  .icon-closed { color: #8250df; }
+
+  .shadow-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+  .shadow-box { background: #fff; border-radius: 6px; padding: 24px; text-align: center; }
+  .shadow-label { font-size: 12px; font-weight: 600; color: #656d76; margin-top: 8px; }
+
+  .radius-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; align-items: flex-end; }
+  .radius-box { width: 56px; height: 56px; background: #0969da; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 10px; font-weight: 600; }
+
+  @media (max-width: 768px) { .shadow-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <svg height="32" viewBox="0 0 16 16" width="32"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"></path></svg>
+  <input class="header-search" type="text" placeholder="Search or jump to...">
+  <a href="#" class="header-link">Pull requests</a>
+  <a href="#" class="header-link">Issues</a>
+</div>
+
+<div class="container">
+
+  <h2>Color Palette</h2>
+  <h3>Primary & Semantic</h3>
+  <div class="swatch-grid">
+    <div class="swatch"><div class="swatch-color" style="background:#0969da"></div><div class="swatch-info"><div class="swatch-name">GitHub Blue</div><div class="swatch-hex">#0969da</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#1a7f37"></div><div class="swatch-info"><div class="swatch-name">Success</div><div class="swatch-hex">#1a7f37</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#d1242f"></div><div class="swatch-info"><div class="swatch-name">Danger</div><div class="swatch-hex">#d1242f</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#9a6700"></div><div class="swatch-info"><div class="swatch-name">Warning</div><div class="swatch-hex">#9a6700</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#8250df"></div><div class="swatch-info"><div class="swatch-name">Done/Purple</div><div class="swatch-hex">#8250df</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#bc4c00"></div><div class="swatch-info"><div class="swatch-name">Attention</div><div class="swatch-hex">#bc4c00</div></div></div>
+  </div>
+  <h3>Surfaces & Neutrals</h3>
+  <div class="swatch-grid">
+    <div class="swatch"><div class="swatch-color" style="background:#ffffff; border-bottom: 1px solid #d0d7de"></div><div class="swatch-info"><div class="swatch-name">Canvas</div><div class="swatch-hex">#ffffff</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#f6f8fa"></div><div class="swatch-info"><div class="swatch-name">Subtle</div><div class="swatch-hex">#f6f8fa</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#eff2f5"></div><div class="swatch-info"><div class="swatch-name">Inset</div><div class="swatch-hex">#eff2f5</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#1f2328"></div><div class="swatch-info"><div class="swatch-name">Text Primary</div><div class="swatch-hex">#1f2328</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#656d76"></div><div class="swatch-info"><div class="swatch-name">Text Secondary</div><div class="swatch-hex">#656d76</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#d0d7de"></div><div class="swatch-info"><div class="swatch-name">Border</div><div class="swatch-hex">#d0d7de</div></div></div>
+  </div>
+
+  <h2>Typography</h2>
+  <div class="type-sample"><div class="type-label">Display — 40px / 700</div><div style="font-size:40px;font-weight:700;line-height:1.20">Where the world builds software</div></div>
+  <div class="type-sample"><div class="type-label">Page Title — 32px / 600</div><div style="font-size:32px;font-weight:600;line-height:1.25">octocat/hello-world</div></div>
+  <div class="type-sample"><div class="type-label">Section Heading — 24px / 600</div><div style="font-size:24px;font-weight:600;line-height:1.25">Getting Started</div></div>
+  <div class="type-sample"><div class="type-label">Sub-heading — 20px / 600</div><div style="font-size:20px;font-weight:600;line-height:1.30">Installation</div></div>
+  <div class="type-sample"><div class="type-label">Body — 14px / 400</div><div style="font-size:14px;line-height:1.50;color:#656d76">GitHub is where over 100 million developers shape the future of software, together.</div></div>
+  <div class="type-sample"><div class="type-label">Body Small — 12px / 400</div><div style="font-size:12px;color:#656d76">Updated 2 hours ago · 14.2k stars · MIT License</div></div>
+  <div class="type-sample"><div class="type-label">Code — 13px / Mono</div><div style="font-size:13px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#f6f8fa;padding:4px 8px;border-radius:6px;border:1px solid #d0d7de;display:inline-block">npm install @primer/css</div></div>
+
+  <h2>Navigation Tabs</h2>
+  <div class="tab-nav">
+    <a class="tab active" href="#">Code</a>
+    <a class="tab" href="#">Issues <span class="counter">47</span></a>
+    <a class="tab" href="#">Pull requests <span class="counter">12</span></a>
+    <a class="tab" href="#">Actions</a>
+    <a class="tab" href="#">Projects</a>
+    <a class="tab" href="#">Security</a>
+  </div>
+
+  <h2>Buttons</h2>
+  <div class="btn-row">
+    <button class="btn btn-primary">Primary</button>
+    <button class="btn btn-secondary">Default</button>
+    <button class="btn btn-danger">Danger</button>
+    <button class="btn btn-invisible">Invisible</button>
+  </div>
+
+  <h2>Issue List</h2>
+  <div class="card">
+    <div class="card-row">
+      <span class="icon-open" style="font-size:16px">●</span>
+      <div>
+        <div class="card-title">Fix authentication flow for OAuth2 providers</div>
+        <div style="display:flex;gap:4px;margin-top:4px"><span class="label label-red">bug</span> <span class="label label-blue">auth</span></div>
+        <div class="card-meta">#1234 opened 3 days ago by octocat</div>
+      </div>
+    </div>
+    <div class="card-row">
+      <span class="icon-closed" style="font-size:16px">●</span>
+      <div>
+        <div class="card-title">Add dark mode support for markdown preview</div>
+        <div style="display:flex;gap:4px;margin-top:4px"><span class="label label-green">enhancement</span> <span class="label label-purple">design</span></div>
+        <div class="card-meta">#1233 closed 1 day ago by mona</div>
+      </div>
+    </div>
+    <div class="card-row">
+      <span class="icon-open" style="font-size:16px">●</span>
+      <div>
+        <div class="card-title">Update dependency: react 18.3 → 19.0</div>
+        <div style="display:flex;gap:4px;margin-top:4px"><span class="label label-blue">dependencies</span></div>
+        <div class="card-meta">#1232 opened 5 days ago by dependabot</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Repository Cards</h2>
+  <div class="card" style="padding:16px;margin-bottom:8px">
+    <div class="card-title" style="margin-bottom:4px">primer/react</div>
+    <p style="font-size:14px;margin-bottom:8px">React components for the Primer design system</p>
+    <div style="display:flex;gap:16px;font-size:12px;color:#656d76">
+      <span><span class="lang-dot" style="background:#f1e05a"></span> TypeScript</span>
+      <span>★ 2.8k</span>
+      <span>MIT</span>
+    </div>
+  </div>
+  <div class="card" style="padding:16px">
+    <div class="card-title" style="margin-bottom:4px">github/docs</div>
+    <p style="font-size:14px;margin-bottom:8px">The open-source repo for docs.github.com</p>
+    <div style="display:flex;gap:16px;font-size:12px;color:#656d76">
+      <span><span class="lang-dot" style="background:#3572a5"></span> JavaScript</span>
+      <span>★ 15.2k</span>
+      <span>CC-BY-4.0</span>
+    </div>
+  </div>
+
+  <h2>Inputs</h2>
+  <div class="input-group">
+    <label class="input-label">Repository name</label>
+    <input class="input" type="text" placeholder="my-awesome-project">
+  </div>
+  <div class="input-group">
+    <label class="input-label">Description (optional)</label>
+    <input class="input" type="text" placeholder="Short description of your project">
+  </div>
+
+  <h2>Labels</h2>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px">
+    <span class="label label-blue">documentation</span>
+    <span class="label label-green">good first issue</span>
+    <span class="label label-red">bug</span>
+    <span class="label label-purple">question</span>
+    <span class="label" style="background:#fff8c5;color:#9a6700">help wanted</span>
+    <span class="label" style="background:#ffebe9;color:#bc4c00">high priority</span>
+  </div>
+
+  <h2>Elevation / Shadows</h2>
+  <div class="shadow-grid">
+    <div class="shadow-box" style="border:1px solid #d0d7de"><div class="shadow-label">Flat (border only)</div></div>
+    <div class="shadow-box" style="box-shadow:0 1px 0 rgba(27,31,36,0.04);border:1px solid #d0d7de"><div class="shadow-label">Low (button)</div></div>
+    <div class="shadow-box" style="box-shadow:0 1px 3px rgba(27,31,36,0.12),0 8px 24px rgba(66,74,83,0.12)"><div class="shadow-label">Medium (dropdown)</div></div>
+  </div>
+
+  <h2>Border Radius</h2>
+  <div class="radius-row">
+    <div><div class="radius-box" style="border-radius:0">0</div><div class="shadow-label" style="font-size:11px;text-align:center">None</div></div>
+    <div><div class="radius-box" style="border-radius:4px">4px</div><div class="shadow-label" style="font-size:11px;text-align:center">Small</div></div>
+    <div><div class="radius-box" style="border-radius:6px">6px</div><div class="shadow-label" style="font-size:11px;text-align:center">Default</div></div>
+    <div><div class="radius-box" style="border-radius:12px">12px</div><div class="shadow-label" style="font-size:11px;text-align:center">Large</div></div>
+    <div><div class="radius-box" style="border-radius:16px">16px</div><div class="shadow-label" style="font-size:11px;text-align:center">Pill</div></div>
+    <div><div class="radius-box" style="border-radius:50%">50%</div><div class="shadow-label" style="font-size:11px;text-align:center">Circle</div></div>
+  </div>
+
+</div>
+<div style="height: 48px"></div>
+</body>
+</html>

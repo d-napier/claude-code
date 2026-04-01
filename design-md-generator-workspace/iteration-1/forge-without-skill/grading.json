@@ -1,0 +1,60 @@
+{
+  "expectations": [
+    {
+      "text": "DESIGN.md contains all 9 numbered sections (1-9) with correct headers",
+      "passed": true,
+      "evidence": "Found sections: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] (11/9)"
+    },
+    {
+      "text": "Section 2 defines at least 15 unique hex color codes with semantic names in bold",
+      "passed": false,
+      "evidence": "Found 16 unique hex codes, 0 with bold semantic names"
+    },
+    {
+      "text": "Section 3 contains a markdown table with at least 12 rows covering typography hierarchy",
+      "passed": false,
+      "evidence": "Typography table has 7 data rows"
+    },
+    {
+      "text": "Section 4 defines at least 3 distinct button variants with specific padding, radius, and color values",
+      "passed": false,
+      "evidence": "Found 0 button variant definitions"
+    },
+    {
+      "text": "Section 6 contains an elevation table with at least 4 levels",
+      "passed": false,
+      "evidence": "Elevation table has 0 rows"
+    },
+    {
+      "text": "Section 7 contains at least 6 Do items and 6 Don't items",
+      "passed": false,
+      "evidence": "Do: 0 items, Don't: 0 items"
+    },
+    {
+      "text": "preview.html file exists and is valid self-contained HTML",
+      "passed": true,
+      "evidence": "preview.html: 20003 chars, valid HTML: True"
+    },
+    {
+      "text": "preview-dark.html file exists and is valid self-contained HTML",
+      "passed": true,
+      "evidence": "preview-dark.html: 23117 chars, valid HTML: True"
+    },
+    {
+      "text": "Border radius values are 0px throughout (brutalist requirement)",
+      "passed": false,
+      "evidence": "All component radii are 0px: False"
+    },
+    {
+      "text": "Section 3 specifies monospace font family for all text roles",
+      "passed": true,
+      "evidence": "Monospace for all text: True"
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 6,
+    "total": 10,
+    "pass_rate": 0.4
+  }
+}
