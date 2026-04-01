@@ -1,0 +1,23 @@
+{
+  "skill_name": "design-md-generator",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "Generate a DESIGN.md for Stripe based on their website at stripe.com. I want the full 9-section Stitch format with preview HTML files.",
+      "expected_output": "A comprehensive DESIGN.md following the 9-section Stitch format with Stripe's color palette (blues, purples, dark backgrounds), typography (custom fonts), component styles, plus preview.html and preview-dark.html files.",
+      "files": []
+    },
+    {
+      "id": 1,
+      "prompt": "Create a DESIGN.md for a brutalist dark-mode developer tool called 'Forge'. Think monospace everything, high contrast, neon accents on near-black backgrounds, no rounded corners, minimal decoration. It should feel like a terminal had a baby with a design system.",
+      "expected_output": "A DESIGN.md with a brutalist aesthetic: monospace fonts, sharp corners (0px radius), high-contrast neon-on-dark palette, minimal shadows, dense spacing. Should feel intentionally raw and technical. Plus preview HTML files.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "I need a DESIGN.md for GitHub's design system. Use their Primer design language as the basis — the clean, functional look with their blue accent, muted backgrounds, and system font stack.",
+      "expected_output": "A DESIGN.md based on GitHub's Primer design system: system font stack, GitHub blue (#0969da), muted gray surfaces, functional/utilitarian aesthetic. Should reference real Primer patterns. Plus preview HTML files.",
+      "files": []
+    }
+  ]
+}
