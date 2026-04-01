@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stripe Design System — Dark Mode Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --color-primary: #635BFF;
+    --color-primary-dark: #4B45C6;
+    --color-primary-light: #7A73FF;
+    --color-cyan: #00D4AA;
+    --color-yellow: #FFD60A;
+    --color-pink: #FF6059;
+    --dark-bg: #0A2540;
+    --dark-surface: #1B3A5C;
+    --dark-surface-elevated: #243B53;
+    --dark-text-primary: #FFFFFF;
+    --dark-text-secondary: #A3ACB9;
+    --dark-border: #2D4A63;
+    --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-full: 9999px;
+    --shadow-dark-sm: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-dark-md: 0 4px 12px rgba(0,0,0,0.4);
+    --shadow-dark-lg: 0 8px 24px rgba(0,0,0,0.5);
+    --shadow-primary: 0 4px 12px rgba(99,91,255,0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font-primary);
+    background: var(--dark-bg);
+    color: var(--dark-text-primary);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Navigation */
+  .nav {
+    background: rgba(10,37,64,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--dark-border);
+    height: 64px;
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav-logo {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--color-primary-light);
+    letter-spacing: -0.02em;
+  }
+  .nav-links { display: flex; gap: 28px; align-items: center; }
+  .nav-links a {
+    color: var(--dark-text-secondary);
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 500;
+    transition: color 150ms ease;
+  }
+  .nav-links a:hover { color: var(--dark-text-primary); }
+
+  /* Hero */
+  .hero {
+    padding: 100px 32px 80px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(180deg, #0E2D4D 0%, var(--dark-bg) 100%);
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -20%;
+    width: 140%;
+    height: 140%;
+    background: radial-gradient(at 30% 30%, rgba(99,91,255,0.15) 0%, transparent 50%),
+                radial-gradient(at 70% 60%, rgba(0,212,170,0.1) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .hero h1 {
+    font-size: 64px;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 20px;
+    position: relative;
+    color: var(--dark-text-primary);
+  }
+  .hero h1 span {
+    background: linear-gradient(135deg, var(--color-primary-light), var(--color-cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero p {
+    font-size: 18px;
+    color: var(--dark-text-secondary);
+    max-width: 560px;
+    margin: 0 auto 32px;
+    position: relative;
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-primary);
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    transition: all 150ms ease;
+    text-decoration: none;
+  }
+  .btn-primary {
+    background: var(--color-primary);
+    color: #fff;
+    padding: 10px 20px;
+    font-size: 16px;
+    box-shadow: var(--shadow-primary);
+  }
+  .btn-primary:hover { background: var(--color-primary-light); transform: translateY(-1px); }
+  .btn-secondary {
+    background: transparent;
+    color: var(--color-primary-light);
+    border: 1px solid rgba(99,91,255,0.5);
+    padding: 10px 20px;
+    font-size: 16px;
+  }
+  .btn-secondary:hover { background: rgba(99,91,255,0.1); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--dark-text-secondary);
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: 500;
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.06); }
+  .btn-sm { padding: 6px 12px; font-size: 14px; }
+  .btn-lg { padding: 14px 28px; font-size: 18px; }
+  .btn-group { display: flex; gap: 12px; justify-content: center; position: relative; }
+
+  /* Section */
+  .section {
+    padding: 80px 32px;
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+  .section-title {
+    font-size: 36px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    margin-bottom: 12px;
+    color: var(--dark-text-primary);
+  }
+  .section-subtitle {
+    font-size: 18px;
+    color: var(--dark-text-secondary);
+    margin-bottom: 48px;
+    max-width: 600px;
+  }
+
+  /* Color Swatches */
+  .swatches {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+  .swatch {
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid var(--dark-border);
+    background: var(--dark-surface);
+  }
+  .swatch-color { height: 72px; }
+  .swatch-info { padding: 10px 12px; }
+  .swatch-name { font-size: 13px; font-weight: 600; color: var(--dark-text-primary); }
+  .swatch-hex { font-size: 12px; color: var(--dark-text-secondary); font-family: var(--font-mono); }
+
+  /* Typography Showcase */
+  .type-row {
+    display: flex;
+    align-items: baseline;
+    gap: 24px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--dark-border);
+  }
+  .type-label {
+    width: 120px;
+    flex-shrink: 0;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--dark-text-secondary);
+    font-family: var(--font-mono);
+  }
+  .type-sample { flex: 1; color: var(--dark-text-primary); }
+
+  /* Cards */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  .card {
+    background: var(--dark-surface);
+    border: 1px solid var(--dark-border);
+    border-radius: var(--radius-md);
+    padding: 24px;
+    box-shadow: var(--shadow-dark-sm);
+    transition: all 200ms ease;
+  }
+  .card:hover {
+    box-shadow: var(--shadow-dark-md);
+    transform: translateY(-2px);
+    border-color: rgba(99,91,255,0.3);
+  }
+  .card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    background: rgba(99,91,255,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    color: var(--color-primary-light);
+    font-size: 18px;
+  }
+  .card h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--dark-text-primary);
+  }
+  .card p {
+    font-size: 14px;
+    color: var(--dark-text-secondary);
+    line-height: 1.5;
+  }
+
+  /* Badges */
+  .badges { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 48px; }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .badge-default { background: rgba(163,172,185,0.12); color: var(--dark-text-secondary); }
+  .badge-primary { background: rgba(99,91,255,0.15); color: var(--color-primary-light); }
+  .badge-success { background: rgba(0,212,170,0.15); color: #00D4AA; }
+  .badge-warning { background: rgba(255,214,10,0.15); color: #FFD60A; }
+  .badge-error { background: rgba(255,96,89,0.15); color: #FF6059; }
+
+  /* Form */
+  .form-group { margin-bottom: 20px; max-width: 400px; }
+  .form-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--dark-text-secondary);
+    margin-bottom: 6px;
+  }
+  .form-input {
+    width: 100%;
+    background: var(--dark-surface);
+    border: 1px solid var(--dark-border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 16px;
+    font-family: var(--font-primary);
+    color: var(--dark-text-primary);
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+    outline: none;
+  }
+  .form-input::placeholder { color: rgba(163,172,185,0.6); }
+  .form-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(99,91,255,0.2);
+  }
+
+  /* Code Block */
+  .code-block {
+    background: #060F1A;
+    color: #E3E8EE;
+    border: 1px solid var(--dark-border);
+    border-radius: var(--radius-md);
+    padding: 24px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin-bottom: 48px;
+  }
+  .code-block .kw { color: #FF6059; }
+  .code-block .str { color: #00D4AA; }
+  .code-block .fn { color: #7A73FF; }
+  .code-block .cm { color: #697386; }
+  .code-block .num { color: #FFD60A; }
+  .code-block .op { color: #A3ACB9; }
+
+  /* Gradient Bar */
+  .gradient-bar {
+    height: 8px;
+    border-radius: 4px;
+    margin-bottom: 12px;
+  }
+
+  /* Spacing demo */
+  .spacing-demo { display: flex; gap: 12px; align-items: flex-end; margin-bottom: 48px; flex-wrap: wrap; }
+  .spacing-box {
+    background: rgba(99,91,255,0.15);
+    border: 1px solid rgba(99,91,255,0.3);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--color-primary-light);
+    font-family: var(--font-mono);
+  }
+
+  /* Shadow demo */
+  .shadow-demo { display: flex; gap: 24px; margin-bottom: 48px; flex-wrap: wrap; }
+  .shadow-box {
+    width: 120px;
+    height: 80px;
+    background: var(--dark-surface);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--dark-text-secondary);
+  }
+
+  /* Footer */
+  .footer {
+    background: #060F1A;
+    border-top: 1px solid var(--dark-border);
+    padding: 48px 32px;
+    text-align: center;
+    color: var(--dark-text-secondary);
+    font-size: 14px;
+  }
+
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 40px; }
+    .cards-grid { grid-template-columns: 1fr; }
+    .nav-links { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="nav">
+  <div class="nav-logo">stripe</div>
+  <div class="nav-links">
+    <a href="#">Products</a>
+    <a href="#">Solutions</a>
+    <a href="#">Developers</a>
+    <a href="#">Resources</a>
+    <a href="#">Pricing</a>
+    <a href="#" class="btn btn-primary btn-sm">Sign in</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <h1>Financial infrastructure for the <span>internet</span></h1>
+  <p>Millions of businesses use Stripe to accept payments, grow revenue, and accelerate new business opportunities.</p>
+  <div class="btn-group">
+    <a href="#" class="btn btn-primary btn-lg">Start now &rarr;</a>
+    <a href="#" class="btn btn-secondary btn-lg">Contact sales</a>
+  </div>
+</section>
+
+<!-- Colors -->
+<section class="section">
+  <h2 class="section-title">Colors</h2>
+  <p class="section-subtitle">Dark mode palette with deep navy backgrounds and elevated surfaces.</p>
+
+  <h4 style="font-size:14px; font-weight:600; color:var(--dark-text-secondary); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:16px;">Dark Mode Surfaces</h4>
+  <div class="swatches">
+    <div class="swatch"><div class="swatch-color" style="background:#0A2540"></div><div class="swatch-info"><div class="swatch-name">Background</div><div class="swatch-hex">#0A2540</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#1B3A5C"></div><div class="swatch-info"><div class="swatch-name">Surface</div><div class="swatch-hex">#1B3A5C</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#243B53"></div><div class="swatch-info"><div class="swatch-name">Elevated</div><div class="swatch-hex">#243B53</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#2D4A63"></div><div class="swatch-info"><div class="swatch-name">Border</div><div class="swatch-hex">#2D4A63</div></div></div>
+  </div>
+
+  <h4 style="font-size:14px; font-weight:600; color:var(--dark-text-secondary); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:16px;">Accents on Dark</h4>
+  <div class="swatches">
+    <div class="swatch"><div class="swatch-color" style="background:#635BFF"></div><div class="swatch-info"><div class="swatch-name">Blurple</div><div class="swatch-hex">#635BFF</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#7A73FF"></div><div class="swatch-info"><div class="swatch-name">Primary Light</div><div class="swatch-hex">#7A73FF</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#00D4AA"></div><div class="swatch-info"><div class="swatch-name">Cyan</div><div class="swatch-hex">#00D4AA</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#FFD60A"></div><div class="swatch-info"><div class="swatch-name">Yellow</div><div class="swatch-hex">#FFD60A</div></div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#FF6059"></div><div class="swatch-info"><div class="swatch-name">Pink</div><div class="swatch-hex">#FF6059</div></div></div>
+  </div>
+
+  <h4 style="font-size:14px; font-weight:600; color:var(--dark-text-secondary); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:16px;">Gradients</h4>
+  <div class="gradient-bar" style="background: linear-gradient(135deg, #635BFF 0%, #00D4AA 100%);"></div>
+  <p style="font-size:13px; color:var(--dark-text-secondary); margin-bottom:12px; font-family:var(--font-mono);">Brand gradient: 135deg #635BFF -> #00D4AA</p>
+  <div class="gradient-bar" style="background: linear-gradient(180deg, #0A2540 0%, #1B3A5C 100%);"></div>
+  <p style="font-size:13px; color:var(--dark-text-secondary); margin-bottom:12px; font-family:var(--font-mono);">Dark gradient: 180deg #0A2540 -> #1B3A5C</p>
+</section>
+
+<!-- Typography -->
+<section class="section" style="border-top: 1px solid var(--dark-border);">
+  <h2 class="section-title">Typography</h2>
+  <p class="section-subtitle">Same type scale, optimized for dark backgrounds with white primary text.</p>
+
+  <div class="type-row">
+    <div class="type-label">Hero / 64px</div>
+    <div class="type-sample" style="font-size:64px; font-weight:700; line-height:1.1; letter-spacing:-0.02em;">Financial infrastructure</div>
+  </div>
+  <div class="type-row">
+    <div class="type-label">H1 / 48px</div>
+    <div class="type-sample" style="font-size:48px; font-weight:700; line-height:1.15; letter-spacing:-0.02em;">Accept payments</div>
+  </div>
+  <div class="type-row">
+    <div class="type-label">H2 / 36px</div>
+    <div class="type-sample" style="font-size:36px; font-weight:600; line-height:1.2; letter-spacing:-0.01em;">Grow your revenue</div>
+  </div>
+  <div class="type-row">
+    <div class="type-label">H3 / 28px</div>
+    <div class="type-sample" style="font-size:28px; font-weight:600; line-height:1.3;">Global scale</div>
+  </div>
+  <div class="type-row">
+    <div class="type-label">H4 / 22px</div>
+    <div class="type-sample" style="font-size:22px; font-weight:600; line-height:1.35;">Developer tools</div>
+  </div>
+  <div class="type-row">
+    <div class="type-label">Body LG / 18px</div>
+    <div class="type-sample" style="font-size:18px; font-weight:400; line-height:1.6; color:var(--dark-text-secondary);">Stripe powers online and in-person payment processing for internet businesses of all sizes.</div>
+  </div>
+  <div class="type-row">
+    <div class="type-label">Body / 16px</div>
+    <div class="type-sample" style="font-size:16px; font-weight:400; line-height:1.6; color:var(--dark-text-secondary);">Use Stripe's APIs and developer tools to build, test, and launch your integration quickly.</div>
+  </div>
+  <div class="type-row">
+    <div class="type-label">Body SM / 14px</div>
+    <div class="type-sample" style="font-size:14px; font-weight:400; line-height:1.5; color:var(--dark-text-secondary);">Available in 46+ countries with 135+ currencies supported.</div>
+  </div>
+  <div class="type-row">
+    <div class="type-label">Caption / 12px</div>
+    <div class="type-sample" style="font-size:12px; font-weight:500; line-height:1.5; letter-spacing:0.02em; color:var(--dark-text-secondary);">LAST UPDATED 3 MINUTES AGO</div>
+  </div>
+  <div class="type-row">
+    <div class="type-label">Mono / 14px</div>
+    <div class="type-sample" style="font-size:14px; font-weight:400; line-height:1.6; font-family:var(--font-mono); color:var(--color-cyan);">stripe.charges.create({ amount: 2000 })</div>
+  </div>
+</section>
+
+<!-- Buttons -->
+<section class="section" style="border-top: 1px solid var(--dark-border);">
+  <h2 class="section-title">Buttons</h2>
+  <p class="section-subtitle">Three variants adapted for dark backgrounds.</p>
+
+  <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin-bottom:24px;">
+    <button class="btn btn-primary btn-sm">Small</button>
+    <button class="btn btn-primary">Medium</button>
+    <button class="btn btn-primary btn-lg">Large</button>
+  </div>
+  <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin-bottom:24px;">
+    <button class="btn btn-secondary btn-sm">Small</button>
+    <button class="btn btn-secondary">Medium</button>
+    <button class="btn btn-secondary btn-lg">Large</button>
+  </div>
+  <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin-bottom:24px;">
+    <button class="btn btn-ghost btn-sm">Small</button>
+    <button class="btn btn-ghost">Medium</button>
+    <button class="btn btn-ghost btn-lg">Large</button>
+  </div>
+</section>
+
+<!-- Badges -->
+<section class="section" style="border-top: 1px solid var(--dark-border);">
+  <h2 class="section-title">Badges</h2>
+  <p class="section-subtitle">Semantic badges with adjusted opacity for dark surfaces.</p>
+  <div class="badges">
+    <span class="badge badge-default">Default</span>
+    <span class="badge badge-primary">Primary</span>
+    <span class="badge badge-success">Success</span>
+    <span class="badge badge-warning">Warning</span>
+    <span class="badge badge-error">Error</span>
+  </div>
+</section>
+
+<!-- Cards -->
+<section class="section" style="border-top: 1px solid var(--dark-border);">
+  <h2 class="section-title">Cards</h2>
+  <p class="section-subtitle">Dark surface cards with border highlight on hover.</p>
+  <div class="cards-grid">
+    <div class="card">
+      <div class="card-icon">&#9889;</div>
+      <h3>Payments</h3>
+      <p>Accept payments online, in person, or through your platform with a unified API.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">&#127758;</div>
+      <h3>Connect</h3>
+      <p>Build a marketplace or platform with multi-party payments and payouts.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">&#128202;</div>
+      <h3>Billing</h3>
+      <p>Create and manage subscriptions, invoices, and recurring revenue.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Form Inputs -->
+<section class="section" style="border-top: 1px solid var(--dark-border);">
+  <h2 class="section-title">Form Inputs</h2>
+  <p class="section-subtitle">Dark surface inputs with glowing focus rings.</p>
+  <div class="form-group">
+    <label class="form-label">Email address</label>
+    <input type="email" class="form-input" placeholder="you@company.com">
+  </div>
+  <div class="form-group">
+    <label class="form-label">Card number</label>
+    <input type="text" class="form-input" placeholder="4242 4242 4242 4242">
+  </div>
+  <div style="display: flex; gap: 16px; max-width: 400px;">
+    <div class="form-group" style="flex:1;">
+      <label class="form-label">Expiry</label>
+      <input type="text" class="form-input" placeholder="MM / YY">
+    </div>
+    <div class="form-group" style="flex:1;">
+      <label class="form-label">CVC</label>
+      <input type="text" class="form-input" placeholder="123">
+    </div>
+  </div>
+</section>
+
+<!-- Code Block -->
+<section class="section" style="border-top: 1px solid var(--dark-border);">
+  <h2 class="section-title">Code</h2>
+  <p class="section-subtitle">Code blocks with deeper background to differentiate from page surface.</p>
+  <div class="code-block"><span class="cm">// Create a payment intent</span>
+<span class="kw">const</span> paymentIntent <span class="op">=</span> <span class="kw">await</span> stripe<span class="op">.</span>paymentIntents<span class="op">.</span><span class="fn">create</span>({
+  amount<span class="op">:</span> <span class="num">2000</span>,
+  currency<span class="op">:</span> <span class="str">'usd'</span>,
+  automatic_payment_methods<span class="op">:</span> {
+    enabled<span class="op">:</span> <span class="kw">true</span>,
+  },
+});</div>
+</section>
+
+<!-- Shadows -->
+<section class="section" style="border-top: 1px solid var(--dark-border);">
+  <h2 class="section-title">Shadows & Spacing</h2>
+  <p class="section-subtitle">Darker, more opaque shadows for dark mode elevation.</p>
+
+  <h4 style="font-size:14px; font-weight:600; color:var(--dark-text-secondary); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:16px;">Shadows</h4>
+  <div class="shadow-demo">
+    <div class="shadow-box" style="box-shadow: var(--shadow-dark-sm);">sm</div>
+    <div class="shadow-box" style="box-shadow: var(--shadow-dark-md);">md</div>
+    <div class="shadow-box" style="box-shadow: var(--shadow-dark-lg);">lg</div>
+    <div class="shadow-box" style="box-shadow: 0 16px 48px rgba(0,0,0,0.6);">xl</div>
+  </div>
+
+  <h4 style="font-size:14px; font-weight:600; color:var(--dark-text-secondary); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:16px;">Spacing Scale</h4>
+  <div class="spacing-demo">
+    <div class="spacing-box" style="width:4px; height:4px;" title="4px"></div>
+    <div class="spacing-box" style="width:8px; height:8px;" title="8px"></div>
+    <div class="spacing-box" style="width:12px; height:12px;" title="12px">12</div>
+    <div class="spacing-box" style="width:16px; height:16px;" title="16px">16</div>
+    <div class="spacing-box" style="width:24px; height:24px;" title="24px">24</div>
+    <div class="spacing-box" style="width:32px; height:32px;" title="32px">32</div>
+    <div class="spacing-box" style="width:48px; height:48px;" title="48px">48</div>
+    <div class="spacing-box" style="width:64px; height:64px;" title="64px">64</div>
+  </div>
+</section>
+
+<!-- Border Radii -->
+<section class="section" style="border-top: 1px solid var(--dark-border);">
+  <h2 class="section-title">Border Radii</h2>
+  <p class="section-subtitle">Same radius tokens rendered on dark surfaces.</p>
+  <div style="display:flex; gap:24px; align-items:center; flex-wrap:wrap;">
+    <div style="width:80px; height:56px; background:var(--dark-surface); border:1px solid var(--dark-border); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:500; color:var(--dark-text-secondary);">6px</div>
+    <div style="width:80px; height:56px; background:var(--dark-surface); border:1px solid var(--dark-border); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:500; color:var(--dark-text-secondary);">8px</div>
+    <div style="width:80px; height:56px; background:var(--dark-surface); border:1px solid var(--dark-border); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:500; color:var(--dark-text-secondary);">12px</div>
+    <div style="width:80px; height:56px; background:var(--dark-surface); border:1px solid var(--dark-border); border-radius:16px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:500; color:var(--dark-text-secondary);">16px</div>
+    <div style="width:80px; height:56px; background:var(--dark-surface); border:1px solid var(--dark-border); border-radius:9999px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:500; color:var(--dark-text-secondary);">full</div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <p>Stripe Design System Preview &mdash; Dark Mode &mdash; Generated from DESIGN.md</p>
+</footer>
+
+</body>
+</html>
